@@ -1,0 +1,17 @@
+# Cache de áudio gerado
+data/audio_cache/
+
+# Arquivos de progresso do usuário
+progress.json
+vocabulary.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Sistema
+.DS_Store
+Thumbs.db
