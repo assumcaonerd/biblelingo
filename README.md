@@ -2,21 +2,23 @@
 
 App estilo Duolingo para aprender inglês lendo e praticando com a Bíblia (World English Bible).
 
-Gamificação + leitura interativa + vocabulário + quiz + áudio + **múltiplos idiomas**.
+Gamificação + leitura interativa + vocabulário + quiz + áudio + múltiplos idiomas.
 
 ## Objetivo
 
 Aprender inglês de forma natural através da leitura da Escritura. Texto da **World English Bible (WEB)** (domínio público).
 
-## Idiomas suportados
+## Idiomas nativos suportados
 
-O app ensina **inglês**. O usuário pode escolher seu idioma nativo:
+O app ensina **inglês**. O usuário escolhe seu idioma nativo:
 
-| Código | Idioma     |
-|--------|------------|
-| `pt`   | Português  |
-| `es`   | Español    |
-| `en`   | English    |
+| Código | Idioma              | Direção |
+|--------|---------------------|---------|
+| `pt`   | Português 🇧🇷         | LTR     |
+| `es`   | Español 🇪🇸           | LTR     |
+| `en`   | English 🇺🇸           | LTR     |
+| `ar`   | العربية 🇸🇦            | RTL     |
+| `he`   | עברית 🇮🇱             | RTL     |
 
 A interface e as traduções do quiz mudam conforme o idioma escolhido.
 
@@ -29,7 +31,7 @@ A interface e as traduções do quiz mudam conforme o idioma escolhido.
 - Vocabulário do usuário
 - Quiz interativo (múltipla escolha)
 - Áudio com edge-tts + cache
-- **Suporte a múltiplos idiomas nativos**
+- Suporte a **português, espanhol, inglês, árabe e hebraico**
 - Persistência em JSON
 
 ## Como rodar
@@ -41,7 +43,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Na primeira tela você escolhe o idioma nativo. Depois o fluxo segue normalmente.
+Na primeira tela você escolhe o idioma nativo.
 
 ## Estrutura
 
@@ -54,10 +56,10 @@ biblelingo/
 │   ├── vocabulary.py
 │   ├── quiz.py
 │   ├── audio.py
-│   └── languages.py      ← config de idiomas + textos da UI
+│   └── languages.py
 ├── data/
 │   ├── genesis_sample.json
-│   ├── dictionary.json   ← traduções pt + es
+│   ├── dictionary.json   (pt, es, ar, he)
 │   └── audio_cache/
 ├── main.py
 └── requirements.txt
