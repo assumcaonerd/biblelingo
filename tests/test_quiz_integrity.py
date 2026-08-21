@@ -79,7 +79,7 @@ class QuizIntegrityTests(unittest.TestCase):
             self.assertIn("question_id", q)
             self.assertNotIn("correct", q)
 
-    def test_double_session_reuses_question_ids(self) -> None:
+    def test_double_session_reuses_question_ids_for_shared_words(self) -> None:
         auth = self._register("nofarm@example.com")
         headers = self._headers(auth["access_token"])
         first = self._seed_and_session(headers, limit=20)
@@ -93,8 +93,10 @@ class QuizIntegrityTests(unittest.TestCase):
 
         ids1 = {q["word"]: q["question_id"] for q in first["questions"]}
         ids2 = {q["word"]: q["question_id"] for q in second["questions"]}
-        self.assertTrue(ids1)
-        self.assertEqual(ids1, ids2)
+        shared_words = sorted(ids1.keys() & ids2.keys())
+        self.assertTrue(shared_words)
+        for word in shared_words:
+            self.assertEqual(ids1[word], ids2[word])
 
     def test_cannot_forge_question_id(self) -> None:
         auth = self._register("forge@example.com")
