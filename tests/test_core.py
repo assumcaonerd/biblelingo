@@ -1,6 +1,4 @@
 import io
-
-import json
 import random
 import tempfile
 import unittest
@@ -16,7 +14,6 @@ from app.domain.quiz import (
     generate_quiz as generate_domain_quiz,
 )
 from app.domain.vocabulary import Vocabulary as DomainVocabulary
-
 from app.parser import clean_word
 from app.progress import Progress
 from app.quiz import generate_quiz, get_translation, load_dictionary

@@ -1,8 +1,3 @@
-/**
- * Payloads de mock tipados pelos contratos Pydantic (src/types/api.ts).
- * Use em testes de componentes e do cliente HTTP.
- */
-
 import type {
   Chapter,
   Dashboard,
@@ -10,6 +5,7 @@ import type {
   Progress,
   ReviewAnswerResponse,
   SeedChapterResponse,
+  StudySessionResponse,
   TokenResponse,
   User,
 } from "../types/api";
@@ -71,6 +67,9 @@ export const mockDashboard: Dashboard = {
 export const mockChapter: Chapter = {
   book: "genesis",
   chapter: 1,
+  label: "Gênesis 1:1-10 (amostra)",
+  complete: false,
+  verse_range: "1-10",
   verses: [
     {
       verse_number: 1,
@@ -78,7 +77,7 @@ export const mockChapter: Chapter = {
     },
     {
       verse_number: 3,
-      text: "God said, \"Let there be light,\" and there was light.",
+      text: 'God said, "Let there be light," and there was light.',
     },
   ],
 };
@@ -86,19 +85,40 @@ export const mockChapter: Chapter = {
 export const mockDueReviews: DueReviews = {
   count: 2,
   native_lang: "pt",
-  questions: [
+  mode: "due",
+  words: [
     {
       word: "light",
-      options: ["luz", "escuridão", "água", "terra"],
-      correct: "luz",
-      context: "God said, \"Let there be light,\" and there was light.",
       origin: "Genesis 1:3",
+      context: 'God said, "Let there be light," and there was light.',
       next_review: "2026-08-21",
     },
     {
       word: "created",
+      origin: "Genesis 1:1",
+      context: "In the beginning, God created the heavens and the earth.",
+      next_review: "2026-08-21",
+    },
+  ],
+};
+
+export const mockStudySession: StudySessionResponse = {
+  count: 2,
+  native_lang: "pt",
+  mode: "session",
+  questions: [
+    {
+      question_id: "q_test_light_001",
+      word: "light",
+      options: ["luz", "escuridão", "água", "terra"],
+      context: 'God said, "Let there be light," and there was light.',
+      origin: "Genesis 1:3",
+      next_review: "2026-08-21",
+    },
+    {
+      question_id: "q_test_created_002",
+      word: "created",
       options: ["criou", "destruiu", "viu", "disse"],
-      correct: "criou",
       context: "In the beginning, God created the heavens and the earth.",
       origin: "Genesis 1:1",
       next_review: "2026-08-21",
@@ -118,6 +138,7 @@ export const mockSeedResult: SeedChapterResponse = {
 };
 
 export const mockReviewCorrect: ReviewAnswerResponse = {
+  question_id: "q_test_light_001",
   idempotency_key: "test-key-1",
   word: "light",
   selected: "luz",
@@ -133,16 +154,6 @@ export const mockReviewCorrect: ReviewAnswerResponse = {
   },
 };
 
-export const mockReviewWrong: ReviewAnswerResponse = {
-  ...mockReviewCorrect,
-  selected: "água",
-  is_correct: false,
-  xp_awarded: 0,
-  review_streak: 0,
-  progress: mockProgress,
-};
-
-/** Resposta HTTP JSON bem-sucedida para mock de fetch. */
 export function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,

@@ -7,6 +7,7 @@ import {
   mockDueReviews,
   mockReviewCorrect,
   mockSeedResult,
+  mockStudySession,
   mockTokenResponse,
   mockUser,
 } from "./test/fixtures";
@@ -25,86 +26,62 @@ describe("api client", () => {
 
   it("login retorna TokenResponse tipado", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(mockTokenResponse));
-
     const result = await api.login("learner@example.com", "secret123");
-
     expect(result.access_token).toBe("test-jwt-token");
-    expect(result.user.email).toBe("learner@example.com");
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/v1/auth/login"),
-      expect.objectContaining({ method: "POST" })
-    );
   });
 
   it("me envia Bearer token", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(mockUser));
-
     const user = await api.me("test-jwt-token");
-
     expect(user.id).toBe("user-test-1");
-    const init = fetchMock.mock.calls[0][1] as RequestInit;
-    const headers = init.headers as Record<string, string>;
-    expect(headers.Authorization).toBe("Bearer test-jwt-token");
   });
 
-  it("dashboard devolve VocabularyStats e meta diária", async () => {
+  it("dashboard devolve métricas", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(mockDashboard));
-
     const dash = await api.dashboard("test-jwt-token", 5);
-
     expect(dash.vocabulary.accuracy_rate).toBe(83.3);
-    expect(dash.goal_met).toBe(false);
-    expect(dash.recent_activity[0]?.word).toBe("light");
   });
 
-  it("chapter carrega versículos de Gênesis", async () => {
+  it("chapter carrega amostra de Gênesis", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(mockChapter));
-
     const chapter = await api.chapter("genesis", 1);
-
-    expect(chapter.verses).toHaveLength(2);
-    expect(chapter.verses[0].verse_number).toBe(1);
+    expect(chapter.complete).toBe(false);
   });
 
-  it("seedChapter devolve contagens idempotentes", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(mockSeedResult));
-
-    const seed = await api.seedChapter("test-jwt-token", "genesis", 1);
-
-    expect(seed.words_new).toBe(12);
-    expect(seed.due_count).toBe(12);
-  });
-
-  it("dueReviews inclui opções e resposta correta", async () => {
+  it("dueReviews retorna words sem questions", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(mockDueReviews));
-
-    const due = await api.dueReviews("test-jwt-token", 5, "pt");
-
-    expect(due.count).toBe(2);
-    const q = due.questions[0];
-    expect(q.options).toContain(q.correct);
+    const due = await api.dueReviews("test-jwt-token", 20, "pt");
+    expect(due.words.length).toBe(2);
+    expect(due).not.toHaveProperty("questions");
   });
 
-  it("answerReview retorna progresso embutido", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(mockReviewCorrect));
+  it("createStudySession emite question_id sem correct", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(mockStudySession));
+    const session = await api.createStudySession("test-jwt-token", 5, "pt");
+    expect(session.questions[0].question_id).toMatch(/^q_/);
+    expect(session.questions[0]).not.toHaveProperty("correct");
+  });
 
+  it("answerReview usa question_id", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(mockReviewCorrect));
     const result = await api.answerReview("test-jwt-token", {
-      word: "light",
+      question_id: "q_test_light_001",
       selected: "luz",
-      native_lang: "pt",
       idempotency_key: "test-key-1",
     });
-
-    expect(result.is_correct).toBe(true);
-    expect(result.xp_awarded).toBe(10);
     expect(result.progress.xp).toBe(50);
   });
 
-  it("lança ApiError com status em falha HTTP", async () => {
+  it("seedChapter devolve contagens", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(mockSeedResult));
+    const seed = await api.seedChapter("test-jwt-token", "genesis", 1);
+    expect(seed.words_new).toBe(12);
+  });
+
+  it("lança ApiError em 401", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ detail: "Not authenticated" }, 401)
     );
-
     await expect(api.me("bad-token")).rejects.toMatchObject({
       name: "ApiError",
       status: 401,

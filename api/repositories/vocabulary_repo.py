@@ -36,6 +36,8 @@ class VocabularyRepository:
         self,
         connection: sqlite3.Connection,
         user_id: str = DEFAULT_USER_ID,
+        *,
+        migrate_legacy: bool = True,
     ) -> Vocabulary:
         rows = connection.execute(
             "SELECT * FROM vocabulary WHERE user_id = ?",
@@ -43,6 +45,9 @@ class VocabularyRepository:
         ).fetchall()
         if rows:
             return self._from_rows(rows)
+
+        if not migrate_legacy:
+            return Vocabulary()
 
         vocabulary = self._load_legacy()
         self.save(connection, vocabulary, user_id)

@@ -5,7 +5,7 @@ import { useAuth } from "../auth";
 import { SpeakButton } from "../components/SpeakButton";
 
 const LESSONS = [
-  { book: "genesis", chapter: 1, label: "Gênesis 1" },
+  { book: "genesis", chapter: 1, label: "Gênesis 1:1-10 (amostra)" },
   { book: "psalms", chapter: 23, label: "Salmos 23" },
 ] as const;
 
@@ -62,6 +62,7 @@ export function Reader() {
 
   const fullChapterText = chapter?.verses.map((v) => v.text).join(" ") ?? "";
   const lessonValue = `${lesson.book}:${lesson.chapter}`;
+  const displayTitle = chapter?.label ?? lesson.label;
 
   return (
     <div>
@@ -73,22 +74,28 @@ export function Reader() {
           disabled={loading || seeding}
           onChange={(event) => {
             const selected = LESSONS.find(
-              (item) => `${item.book}:${item.chapter}` === event.target.value,
+              (item) => `${item.book}:${item.chapter}` === event.target.value
             );
             if (selected) setLesson(selected);
           }}
         >
           {LESSONS.map((item) => (
-            <option key={`${item.book}:${item.chapter}`} value={`${item.book}:${item.chapter}`}>
+            <option
+              key={`${item.book}:${item.chapter}`}
+              value={`${item.book}:${item.chapter}`}
+            >
               {item.label}
             </option>
           ))}
         </select>
       </div>
 
-      <h1>{lesson.label}</h1>
+      <h1>{displayTitle}</h1>
       <p className="muted">
-        World English Bible — leia e ouça, depois pratique as palavras deste capítulo.
+        World English Bible
+        {chapter && chapter.complete === false
+          ? " — amostra parcial (não é o capítulo completo)."
+          : " — leia e ouça, depois pratique as palavras deste capítulo."}
       </p>
 
       {loading && <p className="muted">Carregando…</p>}
@@ -124,12 +131,17 @@ export function Reader() {
 
       {seedInfo && (
         <p className="muted">
-          {seedInfo.words_new} novas · {seedInfo.words_existing} já conhecidas · {seedInfo.due_count} para revisar
+          {seedInfo.words_new} novas · {seedInfo.words_existing} já conhecidas ·{" "}
+          {seedInfo.due_count} para revisar
         </p>
       )}
 
       <div className="actions">
-        <button type="button" disabled={seeding || !token || loading} onClick={practiceChapter}>
+        <button
+          type="button"
+          disabled={seeding || !token || loading}
+          onClick={practiceChapter}
+        >
           {seeding ? "Preparando palavras…" : "Praticar palavras deste capítulo"}
         </button>
         <Link to="/" className="muted">

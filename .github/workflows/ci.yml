@@ -66,15 +66,10 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
-          npm install --no-save \
-            eslint @eslint/js typescript-eslint eslint-plugin-react-hooks eslint-plugin-react-refresh globals \
-            vitest jsdom @testing-library/react @testing-library/jest-dom @testing-library/user-event
+        run: npm ci
 
       - name: ESLint
         run: npm run lint
-        continue-on-error: true
 
       - name: Unit tests (Vitest)
         run: npm test
@@ -109,9 +104,7 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
-          npm install --no-save @playwright/test
+        run: npm ci
 
       - name: Install Playwright browser
         working-directory: frontend

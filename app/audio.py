@@ -14,16 +14,14 @@ Instalação:
 import asyncio
 import hashlib
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 try:
     import edge_tts
 except ImportError:  # áudio é opcional; o restante do app continua funcional
     edge_tts = None
-from typing import Optional
-import subprocess
-import sys
-import tempfile
 
 # Voz padrão (inglês americano natural)
 DEFAULT_VOICE = "en-US-AriaNeural"

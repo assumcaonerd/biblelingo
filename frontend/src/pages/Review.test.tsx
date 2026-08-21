@@ -5,12 +5,12 @@ import { MemoryRouter } from "react-router-dom";
 import { render } from "@testing-library/react";
 import { Review } from "./Review";
 import {
-  mockDueReviews,
   mockReviewCorrect,
+  mockStudySession,
   mockUser,
 } from "../test/fixtures";
 
-const dueMock = vi.fn();
+const sessionMock = vi.fn();
 const answerMock = vi.fn();
 
 vi.mock("../api", async (importOriginal) => {
@@ -19,7 +19,7 @@ vi.mock("../api", async (importOriginal) => {
     ...actual,
     api: {
       ...actual.api,
-      dueReviews: (...args: unknown[]) => dueMock(...args),
+      createStudySession: (...args: unknown[]) => sessionMock(...args),
       answerReview: (...args: unknown[]) => answerMock(...args),
     },
   };
@@ -37,7 +37,6 @@ vi.mock("../auth", () => ({
   }),
 }));
 
-// SpeakButton usa speechSynthesis; evita ruído nos testes.
 vi.mock("../components/SpeakButton", () => ({
   SpeakButton: ({ label }: { label?: string }) => (
     <button type="button">{label ?? "Ouvir"}</button>
@@ -54,29 +53,28 @@ function renderReview() {
 
 describe("Review", () => {
   beforeEach(() => {
-    dueMock.mockReset();
+    sessionMock.mockReset();
     answerMock.mockReset();
   });
 
-  it("carrega pergunta due e opções", async () => {
-    dueMock.mockResolvedValueOnce(mockDueReviews);
+  it("abre sessão via POST e mostra opções", async () => {
+    sessionMock.mockResolvedValueOnce(mockStudySession);
 
     renderReview();
 
-    expect(screen.getByText(/Carregando palavras vencidas/i)).toBeInTheDocument();
-
     await waitFor(() => {
-      expect(screen.getByText(/light/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /Qual o significado de light/i })
+      ).toBeInTheDocument();
     });
 
+    expect(sessionMock).toHaveBeenCalledWith("test-jwt-token", 5, "pt");
     expect(screen.getByRole("button", { name: "luz" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "escuridão" })).toBeInTheDocument();
-    expect(dueMock).toHaveBeenCalledWith("test-jwt-token", 5, "pt");
   });
 
-  it("ao acertar mostra feedback de XP", async () => {
+  it("ao acertar envia question_id", async () => {
     const user = userEvent.setup();
-    dueMock.mockResolvedValueOnce(mockDueReviews);
+    sessionMock.mockResolvedValueOnce(mockStudySession);
     answerMock.mockResolvedValueOnce(mockReviewCorrect);
 
     renderReview();
@@ -94,22 +92,24 @@ describe("Review", () => {
     expect(answerMock).toHaveBeenCalledWith(
       "test-jwt-token",
       expect.objectContaining({
-        word: "light",
+        question_id: "q_test_light_001",
         selected: "luz",
-        native_lang: "pt",
       })
     );
   });
 
-  it("mostra mensagem quando não há palavras", async () => {
-    dueMock.mockResolvedValueOnce({ count: 0, native_lang: "pt", questions: [] });
+  it("mostra mensagem quando sessão vazia", async () => {
+    sessionMock.mockResolvedValueOnce({
+      count: 0,
+      native_lang: "pt",
+      questions: [],
+      mode: "session",
+    });
 
     renderReview();
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/Nenhuma palavra para revisar agora/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Nenhuma palavra vencida/i)).toBeInTheDocument();
     });
   });
 });
