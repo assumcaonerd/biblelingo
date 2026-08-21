@@ -33,7 +33,19 @@ def load_dictionary(path: str = "data/dictionary.json") -> Dict[str, Dict[str, s
     except (json.JSONDecodeError, OSError) as exc:
         print(f"Não foi possível ler o dicionário em {path}: {exc}")
         return {}
-    return data if isinstance(data, dict) else {}
+    if not isinstance(data, dict):
+        return {}
+
+    merged = dict(data)
+    for extra_path in sorted(file.parent.glob("dictionary_*.json")):
+        try:
+            extra_data = json.loads(extra_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            print(f"Não foi possível ler o dicionário adicional em {extra_path}: {exc}")
+            continue
+        if isinstance(extra_data, dict):
+            merged.update(extra_data)
+    return merged
 
 
 def get_translation(
