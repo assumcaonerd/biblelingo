@@ -40,18 +40,23 @@ A suíte padrão usa apenas a biblioteca do Python e pode ser executada com:
 python -m unittest discover -s tests -v
 ```
 
-Os testes cobrem a curva de níveis, carga de progresso inválida, compatibilidade com vocabulário antigo, agendamento de revisão, traduções ausentes e unicidade das opções do quiz.
+Os testes cobrem a curva de níveis, carga de progresso inválida, compatibilidade com vocabulário antigo, agendamento de revisão, traduções ausentes, unicidade das opções do quiz e os contratos da camada de domínio sem saída no terminal.
 
 ## Estrutura
 
 ```text
 biblelingo/
 ├── app/
-│   ├── progress.py       # XP, níveis, streak e persistência
+│   ├── domain/           # regras puras, sem terminal, arquivos ou framework
+│   │   ├── __init__.py   # contratos públicos compartilhados
+│   │   ├── progress.py   # XP, níveis, streak e eventos de progresso
+│   │   ├── vocabulary.py # vocabulário e revisão espaçada local
+│   │   └── quiz.py       # perguntas tipadas e correção de respostas
+│   ├── progress.py       # adaptador CLI e persistência JSON
 │   ├── bible_loader.py   # leitura e formatação do JSON WEB
 │   ├── parser.py         # tokenização e remoção de stop words
-│   ├── vocabulary.py     # vocabulário e revisão espaçada local
-│   ├── quiz.py           # perguntas, feedback e registro de tentativas
+│   ├── vocabulary.py     # adaptador CLI e persistência JSON
+│   ├── quiz.py           # adaptador CLI, feedback e áudio
 │   ├── audio.py          # edge-tts, cache e reprodução opcional
 │   ├── languages.py      # interface multi-idioma
 │   └── rtl.py            # preparação de árabe e hebraico
@@ -86,7 +91,7 @@ O texto-base da WEB deve continuar sendo obtido de uma fonte autorizada e mantid
 
 ## Próximos passos recomendados
 
-A próxima evolução de maior impacto é expandir o conteúdo por capítulo com metadados de dificuldade e frases de exemplo, separar claramente “palavra nova” de “palavra para revisão” e adicionar exercícios de reconhecimento auditivo. Depois disso, vale criar um adaptador de armazenamento e uma API de sessão para permitir uma interface web sem alterar as regras de vocabulário, quiz e progresso.
+A próxima evolução de maior impacto é expandir o conteúdo por capítulo com metadados de dificuldade e frases de exemplo, separar claramente “palavra nova” de “palavra para revisão” e adicionar exercícios de reconhecimento auditivo. A Phase 0 da migração web começou com a extração do domínio: `app/domain` agora pode ser importado por uma futura API FastAPI sem depender de `input()`, `print()` ou persistência JSON. Depois disso, vale criar repositórios de armazenamento, schemas Pydantic e uma API de sessão sem alterar as regras de vocabulário, quiz e progresso.
 
 ## Licença e conteúdo
 
