@@ -1,2 +1,1 @@
-# Por enquanto não precisa de dependências externas.
-# Quando formos para web (Flask) ou outras libs, adicionamos aqui.
+edge-tts>=6.1.0
