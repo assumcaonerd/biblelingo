@@ -1,7 +1,4 @@
-/**
- * Contratos HTTP alinhados aos schemas Pydantic em api/schemas/.
- * Datas JSON → string ISO. snake_case igual ao payload da API.
- */
+/** Contratos HTTP alinhados a api/schemas/. */
 
 export type NativeLanguage = "pt" | "es" | "en" | "ar" | "he";
 
@@ -88,7 +85,6 @@ export type Chapter = {
   verse_range?: string | null;
 };
 
-/** Resposta a pergunta emitida pelo servidor (sem word/native_lang). */
 export type ReviewAnswerRequest = {
   question_id: string;
   selected: string;
@@ -120,7 +116,21 @@ export type ReviewResult = {
   question_id?: string;
 };
 
-/** Pergunta pública — nunca inclui `correct`. */
+export type DueWordItem = {
+  word: string;
+  origin: string;
+  context: string;
+  next_review?: string | null;
+};
+
+/** GET /reviews/due — somente leitura */
+export type DueReviews = {
+  count: number;
+  native_lang: string;
+  words: DueWordItem[];
+  mode?: string;
+};
+
 export type DueQuestion = {
   question_id: string;
   word: string;
@@ -130,7 +140,8 @@ export type DueQuestion = {
   next_review?: string | null;
 };
 
-export type DueReviews = {
+/** POST /study-sessions */
+export type StudySessionResponse = {
   count: number;
   native_lang: string;
   questions: DueQuestion[];
