@@ -2,7 +2,7 @@
 
 ## Estado verificado
 
-A branch `main` atualmente termina no commit `993f919` (`test: cobertura de GET /v1/reviews/due`) do [repositório BibleLingo][1]. A implementação analisada contém autenticação JWT, `GET /v1/reviews/due`, seed de palavras de Gênesis 1, integração React/Vite na tela **Praticar** e `POST /v1/reviews/answer` idempotente.
+A branch `main` termina agora no commit `7dfaec0` (`test(api): cover due context and language validation`) do [repositório BibleLingo][1]. A implementação contém autenticação JWT, `GET /v1/reviews/due`, seed contextual de Gênesis 1, integração React/Vite na tela **Praticar** e `POST /v1/reviews/answer` idempotente.
 
 ## Validações executadas
 
@@ -18,7 +18,7 @@ A branch `main` atualmente termina no commit `993f919` (`test: cobertura de GET 
 | API direta | `GET /health` respondeu `200`. |
 | Proxy Vite | `GET /api/health` respondeu `200` através do frontend. |
 
-## Correções preparadas localmente
+## Correções publicadas
 
 A instalação limpa revelou que `bcrypt>=4.0.1` permitia instalar bcrypt 5.x, combinação que fazia o registro de usuários falhar com a mensagem de limite de senha mesmo para `secret123`. A dependência foi fixada em `bcrypt==4.0.1`, versão que passou os testes sem esse erro funcional.
 
@@ -38,14 +38,14 @@ Não havia API ou frontend ativos no início da auditoria. Após a validação, 
 
 Os serviços permanecem ativos nesta sessão. O segredo usado foi temporário e exclusivo do teste ponta a ponta; nenhum segredo de produção foi criado ou publicado.
 
-## Ponto pendente
+## Publicação e pendências
 
-As correções preparadas estão no clone temporário `/tmp/biblelingo-current` e **ainda não foram publicadas no GitHub**. O repositório remoto permanece no commit `993f919`. A publicação deve ser feita em um commit separado após sua confirmação, pois altera dependências, backend, frontend e testes.
+As correções e este relatório foram publicados diretamente na branch `main` em sete commits sucessivos: `ec6784c`, `3714287`, `ea9e03e`, `abe388e`, `412eb62`, `f507009` e `7dfaec0`. A comparação byte a byte confirmou que os nove arquivos críticos publicados correspondem às versões testadas localmente. Um clone limpo do HEAD remoto também passou pelos 20 testes, pela compilação Python e pelo build Vite com `npm ci`.
 
 O único aviso não bloqueante restante é a depreciação do uso de `httpx` com `starlette.testclient`, emitida pela versão atual do Starlette. Ela não causou falha nos 20 testes; pode ser tratada posteriormente ao atualizar o contrato de testes para a recomendação da stack.
 
 ## Próximas prioridades
 
-A prioridade imediata é publicar o conjunto de correções locais e executar CI sobre uma instalação limpa. Em seguida, recomenda-se adicionar refresh/revalidação do JWT no frontend, carregar o perfil via `/v1/me` após reload, registrar métricas de retenção e acerto por palavra e evoluir a prática por capítulo sem perder a fila de revisões vencidas.
+A prioridade imediata é configurar CI sobre uma instalação limpa e, em seguida, adicionar refresh/revalidação do JWT no frontend, carregar o perfil via `/v1/me` após reload, registrar métricas de retenção e acerto por palavra e evoluir a prática por capítulo sem perder a fila de revisões vencidas.
 
 [1]: https://github.com/assumcaonerd/biblelingo "Repositório BibleLingo no GitHub"
