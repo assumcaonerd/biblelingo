@@ -1,9 +1,11 @@
-"""Operações atômicas de revisão, idempotência e palavras vencidas."""
+"""Revisão com perguntas emitidas pelo servidor (question_id)."""
 
 from __future__ import annotations
 
+import json
 import sqlite3
-from datetime import date, datetime, timezone
+import uuid
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from app.domain.progress import Progress
@@ -15,79 +17,14 @@ from api.schemas.progress import LevelProgress, ProgressResponse
 from .progress_repo import ProgressRepository
 from .vocabulary_repo import VocabularyRepository
 
-# Palavras iniciais de Gênesis 1 para quem ainda não tem vocabulário.
-# Cada entrada preserva a referência e o versículo exibido no contexto da pergunta.
-STARTER_WORDS = (
-    (
-        "beginning",
-        "Genesis 1:1",
-        "In the beginning, God created the heavens and the earth.",
-    ),
-    (
-        "god",
-        "Genesis 1:1",
-        "In the beginning, God created the heavens and the earth.",
-    ),
-    (
-        "created",
-        "Genesis 1:1",
-        "In the beginning, God created the heavens and the earth.",
-    ),
-    (
-        "heavens",
-        "Genesis 1:1",
-        "In the beginning, God created the heavens and the earth.",
-    ),
-    (
-        "earth",
-        "Genesis 1:1",
-        "In the beginning, God created the heavens and the earth.",
-    ),
-    (
-        "darkness",
-        "Genesis 1:2",
-        "Darkness was on the surface of the deep.",
-    ),
-    (
-        "light",
-        "Genesis 1:3",
-        "God said, Let there be light, and there was light.",
-    ),
-    (
-        "waters",
-        "Genesis 1:2",
-        "God's Spirit was hovering over the surface of the waters.",
-    ),
-    (
-        "spirit",
-        "Genesis 1:2",
-        "God's Spirit was hovering over the surface of the waters.",
-    ),
-    (
-        "day",
-        "Genesis 1:5",
-        "God called the light day, and the darkness he called night.",
-    ),
-    (
-        "night",
-        "Genesis 1:5",
-        "God called the light day, and the darkness he called night.",
-    ),
-    (
-        "good",
-        "Genesis 1:4",
-        "God saw the light, and saw that it was good.",
-    ),
-)
+QUESTION_TTL_HOURS = 24
 
 
 class ReviewInputError(ValueError):
-    """Indica palavra ou idioma sem tradução disponível."""
+    """Entrada inválida ou pergunta inexistente/expirada."""
 
 
 class ReviewRepository:
-    """Aplica uma resposta de revisão como uma única unidade SQLite."""
-
     def __init__(self, progress_repo: ProgressRepository | None = None):
         self.progress_repo = progress_repo or ProgressRepository()
         self.vocabulary_repo = VocabularyRepository()
@@ -99,9 +36,8 @@ class ReviewRepository:
         native_lang: str = "pt",
         limit: int = 5,
         today: date | None = None,
-        seed_if_empty: bool = True,
     ) -> dict[str, Any]:
-        """Retorna perguntas de palavras vencidas (ou seed inicial)."""
+        """Somente palavras vencidas. GET sem seed e sem campo correct."""
         review_date = today or date.today()
         limit = max(1, min(int(limit), 20))
         dictionary = load_dictionary()
@@ -109,20 +45,7 @@ class ReviewRepository:
         connection = self.progress_repo.transaction()
         try:
             vocabulary = self.vocabulary_repo.load(connection, user_id)
-
-            if seed_if_empty and vocabulary.total_words() == 0:
-                for word, origin, context in STARTER_WORDS:
-                    if get_translation(word, dictionary, native_lang):
-                        vocabulary.add_word(word, origin, context=context)
-                self.vocabulary_repo.save(connection, vocabulary, user_id)
-                connection.commit()
-
             due_words = vocabulary.get_due_words(limit=limit * 2, today=review_date)
-            if not due_words:
-                # Sem vencidas: usa as menos praticadas para não deixar a sessão vazia.
-                due_words = vocabulary.get_words_for_quiz(
-                    limit=limit * 2, due_only=False, today=review_date
-                )
 
             contexts = {
                 w: str(vocabulary.words.get(w, {}).get("context") or "")
@@ -141,16 +64,43 @@ class ReviewRepository:
                 contexts=contexts,
             )
 
-            payload = []
+            now = datetime.now(timezone.utc)
+            expires = (now + timedelta(hours=QUESTION_TTL_HOURS)).isoformat()
+            payload: list[dict[str, Any]] = []
+
             for q in questions:
+                question_id = f"q_{uuid.uuid4().hex}"
                 entry = vocabulary.words.get(q.word, {})
                 next_review = entry.get("next_review")
+                options = list(q.options)
+
+                connection.execute(
+                    """
+                    INSERT INTO study_questions (
+                        question_id, user_id, word, correct_answer, options_json,
+                        context, origin, native_lang, answered, created_at, expires_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+                    """,
+                    (
+                        question_id,
+                        user_id,
+                        q.word,
+                        q.correct,
+                        json.dumps(options, ensure_ascii=False),
+                        q.context or "",
+                        origins.get(q.word, ""),
+                        native_lang,
+                        now.isoformat(),
+                        expires,
+                    ),
+                )
+
                 payload.append(
                     {
+                        "question_id": question_id,
                         "word": q.word,
-                        "options": list(q.options),
-                        "correct": q.correct,
-                        "context": q.context,
+                        "options": options,
+                        "context": q.context or "",
                         "origin": origins.get(q.word, ""),
                         "next_review": next_review,
                     }
@@ -161,6 +111,7 @@ class ReviewRepository:
                 "count": len(payload),
                 "native_lang": native_lang,
                 "questions": payload,
+                "mode": "due",
             }
         except Exception:
             connection.rollback()
@@ -172,23 +123,15 @@ class ReviewRepository:
         self,
         *,
         user_id: str = DEFAULT_USER_ID,
-        word: str,
+        question_id: str,
         selected: str,
-        native_lang: str,
         idempotency_key: str,
         today: date | None = None,
     ) -> dict[str, Any]:
         review_date = today or date.today()
-        normalized_word = str(word).strip().lower()
-        if not normalized_word:
-            raise ReviewInputError("word must not be empty")
-
-        dictionary = load_dictionary()
-        correct_answer = get_translation(normalized_word, dictionary, native_lang)
-        if correct_answer is None:
-            raise ReviewInputError(
-                f"No translation available for '{normalized_word}' in '{native_lang}'"
-            )
+        qid = str(question_id).strip()
+        if not qid:
+            raise ReviewInputError("question_id must not be empty")
 
         connection = self.progress_repo.transaction()
         try:
@@ -203,24 +146,45 @@ class ReviewRepository:
                 progress = ProgressRepository.from_connection(connection, user_id)
                 connection.rollback()
                 return self._response_from_row(
-                    existing,
-                    progress,
-                    already_processed=True,
+                    existing, progress, already_processed=True
                 )
+
+            question = connection.execute(
+                "SELECT * FROM study_questions WHERE question_id = ?",
+                (qid,),
+            ).fetchone()
+            if question is None:
+                raise ReviewInputError("Unknown question_id")
+            if question["user_id"] != user_id:
+                raise ReviewInputError("question_id does not belong to this user")
+            if int(question["answered"]) == 1:
+                raise ReviewInputError("question already answered")
+
+            expires_at = datetime.fromisoformat(question["expires_at"])
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > expires_at:
+                raise ReviewInputError("question expired")
+
+            options = json.loads(question["options_json"])
+            selected_str = str(selected).strip()
+            if selected_str not in options and selected_str.casefold() not in {
+                o.casefold() for o in options
+            }:
+                raise ReviewInputError("selected is not a valid option for this question")
+
+            normalized_word = str(question["word"]).strip().lower()
+            correct_answer = str(question["correct_answer"])
+            is_correct = selected_str.casefold() == correct_answer.strip().casefold()
 
             progress = ProgressRepository.from_connection(connection, user_id)
             vocabulary = self.vocabulary_repo.load(connection, user_id)
-            self.vocabulary_repo.ensure_word(
-                connection,
-                vocabulary,
-                normalized_word,
-                user_id,
-            )
 
-            is_correct = (
-                str(selected).strip().casefold()
-                == correct_answer.strip().casefold()
-            )
+            if normalized_word not in vocabulary.words:
+                raise ReviewInputError(
+                    "word is not in vocabulary; seed the chapter before answering"
+                )
+
             progress.record_activity(today=review_date)
             bonus = progress.get_streak_bonus()
             xp_awarded = int(10 * bonus) if is_correct else 0
@@ -237,32 +201,41 @@ class ReviewRepository:
 
             ProgressRepository.save_connection(connection, progress, user_id)
             self.vocabulary_repo.save(connection, vocabulary, user_id)
+
+            connection.execute(
+                "UPDATE study_questions SET answered = 1 WHERE question_id = ?",
+                (qid,),
+            )
+
             created_at = datetime.now(timezone.utc).isoformat()
             connection.execute(
                 """
                 INSERT INTO review_events (
                     user_id, idempotency_key, word, selected, correct_answer,
-                    is_correct, xp_awarded, next_review, review_streak, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    is_correct, xp_awarded, next_review, review_streak, created_at,
+                    question_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     user_id,
                     idempotency_key,
                     normalized_word,
-                    str(selected),
+                    selected_str,
                     correct_answer,
                     int(is_correct),
                     xp_awarded,
                     entry["next_review"],
                     entry["review_streak"],
                     created_at,
+                    qid,
                 ),
             )
             connection.commit()
             return {
+                "question_id": qid,
                 "idempotency_key": idempotency_key,
                 "word": normalized_word,
-                "selected": str(selected),
+                "selected": selected_str,
                 "correct_answer": correct_answer,
                 "is_correct": is_correct,
                 "already_processed": False,
@@ -271,6 +244,9 @@ class ReviewRepository:
                 "review_streak": entry["review_streak"],
                 "progress": self._progress_response(progress),
             }
+        except ReviewInputError:
+            connection.rollback()
+            raise
         except Exception:
             connection.rollback()
             raise
@@ -298,6 +274,7 @@ class ReviewRepository:
         already_processed: bool,
     ) -> dict[str, Any]:
         return {
+            "question_id": row["question_id"] or "",
             "idempotency_key": row["idempotency_key"],
             "word": row["word"],
             "selected": row["selected"],
