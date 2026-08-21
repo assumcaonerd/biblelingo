@@ -2,7 +2,7 @@
 
 ## Estado verificado
 
-A branch `main` termina agora no commit `7dfaec0` (`test(api): cover due context and language validation`) do [repositório BibleLingo][1]. A implementação contém autenticação JWT, `GET /v1/reviews/due`, seed contextual de Gênesis 1, integração React/Vite na tela **Praticar** e `POST /v1/reviews/answer` idempotente.
+A branch `main` contém a implementação auditada no [repositório BibleLingo][1]. O código inclui autenticação JWT, `GET /v1/reviews/due`, seed contextual de Gênesis 1, integração React/Vite na tela **Praticar** e `POST /v1/reviews/answer` idempotente.
 
 ## Validações executadas
 
