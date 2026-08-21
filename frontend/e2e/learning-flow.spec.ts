@@ -15,7 +15,10 @@ test("registrar, ver dashboard e abrir leitor", async ({ page }) => {
   await page.getByRole("button", { name: "Criar conta" }).click();
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Senha").fill(password);
-  await page.getByRole("button", { name: "Criar conta" }).click();
+  await page
+    .locator("form")
+    .getByRole("button", { name: "Criar conta" })
+    .click();
 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("heading", { name: /Olá/i })).toBeVisible({
@@ -36,7 +39,10 @@ test("seed do capítulo e tela de prática", async ({ page }) => {
   await page.getByRole("button", { name: "Criar conta" }).click();
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Senha").fill(password);
-  await page.getByRole("button", { name: "Criar conta" }).click();
+  await page
+    .locator("form")
+    .getByRole("button", { name: "Criar conta" })
+    .click();
   await expect(page.getByRole("heading", { name: /Olá/i })).toBeVisible({
     timeout: 20_000,
   });
