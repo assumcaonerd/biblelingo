@@ -1,44 +1,38 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, type ReviewResult } from "../api";
+import { api, type DueQuestion, type ReviewResult } from "../api";
 import { useAuth } from "../auth";
-
-/** Palavras de Gênesis 1 com traduções pt (MVP local até existir GET /reviews/due). */
-const WORDS: { word: string; options: string[]; correct: string }[] = [
-  { word: "beginning", options: ["começo / princípio", "fim", "meio", "luz"], correct: "começo / princípio" },
-  { word: "created", options: ["criou", "destruiu", "viu", "disse"], correct: "criou" },
-  { word: "light", options: ["luz", "escuridão", "água", "terra"], correct: "luz" },
-  { word: "darkness", options: ["escuridão", "luz", "céu", "dia"], correct: "escuridão" },
-  { word: "waters", options: ["águas", "montanhas", "estrelas", "vento"], correct: "águas" },
-];
-
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
 
 export function Review() {
   const { token, user } = useAuth();
   const native = user?.native_language || "pt";
-  const questions = useMemo(
-    () =>
-      WORDS.map((q) => ({
-        ...q,
-        options: shuffle(q.options),
-      })),
-    []
-  );
 
+  const [questions, setQuestions] = useState<DueQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [index, setIndex] = useState(0);
   const [result, setResult] = useState<ReviewResult | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    setLoading(true);
+    api
+      .dueReviews(token, 5, native)
+      .then((data) => {
+        setQuestions(data.questions);
+        if (data.count === 0) {
+          setLoadError("Nenhuma palavra para revisar agora.");
+        }
+      })
+      .catch((err) =>
+        setLoadError(err instanceof Error ? err.message : "Erro ao carregar")
+      )
+      .finally(() => setLoading(false));
+  }, [token, native]);
 
   const current = questions[index];
 
@@ -50,8 +44,10 @@ export function Review() {
       const res = await api.answerReview(token, {
         word: current.word,
         selected,
-        native_lang: native === "en" ? "pt" : native,
-        idempotency_key: `web-${current.word}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        native_lang: native,
+        idempotency_key: `web-${current.word}-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}`,
       });
       setResult(res);
       setScore((s) => ({
@@ -59,19 +55,7 @@ export function Review() {
         total: s.total + 1,
       }));
     } catch (err) {
-      // Se a API rejeitar (ex: idioma), ainda mostra feedback local
-      const isCorrect = selected === current.correct;
-      setResult({
-        is_correct: isCorrect,
-        correct_answer: current.correct,
-        xp_awarded: isCorrect ? 10 : 0,
-        already_processed: false,
-      });
-      setScore((s) => ({
-        correct: s.correct + (isCorrect ? 1 : 0),
-        total: s.total + 1,
-      }));
-      if (err instanceof Error) setError(err.message);
+      setError(err instanceof Error ? err.message : "Erro ao enviar resposta");
     } finally {
       setBusy(false);
     }
@@ -87,12 +71,27 @@ export function Review() {
     }
   }
 
+  if (loading) {
+    return <p className="muted">Carregando palavras vencidas…</p>;
+  }
+
+  if (loadError && questions.length === 0) {
+    return (
+      <div className="card">
+        <h1>Prática</h1>
+        <p className="muted">{loadError}</p>
+        <Link to="/">Voltar</Link>
+      </div>
+    );
+  }
+
   if (done) {
     return (
       <div className="card">
         <h1>Sessão concluída</h1>
         <p>
-          Você acertou <strong>{score.correct}</strong> de <strong>{score.total}</strong>.
+          Você acertou <strong>{score.correct}</strong> de{" "}
+          <strong>{score.total}</strong>.
         </p>
         <div className="actions">
           <Link
@@ -116,14 +115,29 @@ export function Review() {
     );
   }
 
+  if (!current) {
+    return (
+      <div className="card">
+        <p className="muted">Nada para revisar.</p>
+        <Link to="/">Voltar</Link>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1>Prática</h1>
       <p className="muted">
         Pergunta {index + 1} de {questions.length}
+        {current.origin ? ` · ${current.origin}` : ""}
       </p>
 
       <div className="card">
+        {current.context && (
+          <p className="muted" style={{ fontStyle: "italic", marginTop: 0 }}>
+            “{current.context}”
+          </p>
+        )}
         <h2>
           Qual o significado de <em>{current.word}</em>?
         </h2>
@@ -145,7 +159,11 @@ export function Review() {
                 ? `Correto! +${result.xp_awarded} XP`
                 : `Errado. Resposta: ${result.correct_answer}`}
             </p>
-            {error && <p className="muted" style={{ fontSize: "0.85rem" }}>{error}</p>}
+            {error && (
+              <p className="muted" style={{ fontSize: "0.85rem" }}>
+                {error}
+              </p>
+            )}
             <button type="button" onClick={next}>
               {index + 1 >= questions.length ? "Finalizar" : "Próxima"}
             </button>
