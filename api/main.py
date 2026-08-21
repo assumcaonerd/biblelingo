@@ -9,6 +9,7 @@ Documentação interativa:
 
 from fastapi import FastAPI
 
+from api.database import initialize_database
 from api.routes import api_router
 
 app = FastAPI(
@@ -24,6 +25,12 @@ app = FastAPI(
 app.include_router(api_router)
 
 
+@app.on_event("startup")
+def startup() -> None:
+    """Garante que as tabelas existam antes da primeira requisição."""
+    initialize_database()
+
+
 @app.get("/")
 def root():
     return {
@@ -32,4 +39,5 @@ def root():
         "health": "/health",
         "progress": "/v1/progress",
         "chapters": "/v1/chapters",
+        "review_answer": "/v1/reviews/answer",
     }
