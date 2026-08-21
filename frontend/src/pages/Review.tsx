@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, type DueQuestion, type ReviewResult } from "../api";
 import { useAuth } from "../auth";
+import { SpeakButton } from "../components/SpeakButton";
 
 export function Review() {
   const { token, user } = useAuth();
@@ -140,11 +141,15 @@ export function Review() {
       <div className="card">
         {current.context && (
           <p className="muted" style={{ fontStyle: "italic", marginTop: 0 }}>
-            “{current.context}”
+            “{current.context}”{" "}
+            <SpeakButton text={current.context} label="Ouvir versículo" rate={0.9} />
           </p>
         )}
-        <h2>
-          Qual o significado de <em>{current.word}</em>?
+        <h2 style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
+          <span>
+            Qual o significado de <em>{current.word}</em>?
+          </span>
+          <SpeakButton text={current.word} label="Ouvir palavra" rate={0.85} />
         </h2>
 
         {!result && (
@@ -164,12 +169,15 @@ export function Review() {
                 ? `Correto! +${result.xp_awarded} XP`
                 : `Errado. Resposta: ${result.correct_answer}`}
             </p>
+            <div className="actions" style={{ marginTop: "0.5rem" }}>
+              <SpeakButton text={current.word} label="Ouvir de novo" rate={0.85} />
+            </div>
             {error && (
               <p className="muted" style={{ fontSize: "0.85rem" }}>
                 {error}
               </p>
             )}
-            <button type="button" onClick={next}>
+            <button type="button" onClick={next} style={{ marginTop: "0.75rem" }}>
               {index + 1 >= questions.length ? "Finalizar" : "Próxima"}
             </button>
           </div>
