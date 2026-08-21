@@ -10,22 +10,22 @@ Aprender inglês de forma natural através da leitura da Escritura. O texto usad
 
 ## Status atual
 
-Estamos construindo do zero, seguindo a filosofia *build-your-own*.
-
 ### Já implementado
 - Sistema de **XP** e **níveis**
 - Sistema de **Streak** (dias consecutivos)
 - Bônus de XP baseado no streak
 - Carregador da Bíblia WEB (Gênesis sample)
 - Parser de palavras (com stop words)
-- **Vocabulário do usuário** (adicionar palavras a partir dos versículos)
-- Persistência em JSON (progresso + vocabulário)
+- Vocabulário do usuário
+- **Quiz interativo** (múltipla escolha)
+- Dicionário inicial inglês → português
+- Persistência em JSON
 
 ### Próximos passos
-- Quiz engine
-- Interface mais interativa no terminal
-- Mais capítulos / livros
-- Web interface (Flask ou similar)
+- Mais capítulos e livros
+- Interface web
+- Mais tipos de pergunta no quiz
+- Sistema de vidas / hearts
 
 ## Como rodar
 
@@ -35,28 +35,26 @@ cd biblelingo
 python main.py
 ```
 
-Na primeira execução ele:
+O fluxo completo agora é:
 1. Mostra Gênesis 1
-2. Extrai palavras novas
-3. Adiciona ao vocabulário
-4. Dá XP e atualiza o streak
+2. Extrai e salva palavras novas
+3. Roda um quiz com 5 perguntas
+4. Dá XP (leitura + palavras + acertos)
+5. Atualiza o streak
 
 ## Estrutura
 
 ```
 biblelingo/
 ├── app/
-│   ├── progress.py       # XP + Streak
-│   ├── bible_loader.py   # Carrega WEB
-│   ├── parser.py         # Extrai palavras
-│   ├── vocabulary.py     # Vocabulário do usuário
-│   └── quiz.py           # (próximo)
+│   ├── progress.py
+│   ├── bible_loader.py
+│   ├── parser.py
+│   ├── vocabulary.py
+│   └── quiz.py
 ├── data/
-│   └── genesis_sample.json
+│   ├── genesis_sample.json
+│   └── dictionary.json
 ├── main.py
 └── requirements.txt
 ```
-
-## Filosofia
-
-Código escrito de forma progressiva. Cada módulo pode ser estudado e estendido isoladamente.
