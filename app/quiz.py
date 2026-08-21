@@ -1,15 +1,24 @@
 """
 Gerador e executor de quizzes a partir do vocabulário.
+Suporta múltiplos idiomas nativos (pt, es, ...).
 """
 
 import json
 import random
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+
+from app.languages import DEFAULT_NATIVE, get_ui
 
 
-def load_dictionary(path: str = "data/dictionary.json") -> Dict[str, str]:
-    """Carrega o dicionário inglês → português."""
+def load_dictionary(path: str = "data/dictionary.json") -> Dict[str, Dict[str, str]]:
+    """
+    Carrega o dicionário multi-idioma.
+    Formato:
+    {
+      "word": {"pt": "tradução", "es": "traducción"}
+    }
+    """
     file = Path(path)
     if not file.exists():
         print(f"Dicionário não encontrado em {path}")
@@ -17,30 +26,49 @@ def load_dictionary(path: str = "data/dictionary.json") -> Dict[str, str]:
     return json.loads(file.read_text(encoding="utf-8"))
 
 
+def get_translation(word: str, dictionary: Dict, native_lang: str = DEFAULT_NATIVE) -> Optional[str]:
+    """Retorna a tradução da palavra no idioma nativo do usuário."""
+    entry = dictionary.get(word)
+    if not entry:
+        return None
+    # Tenta o idioma pedido, depois português como fallback
+    return entry.get(native_lang) or entry.get("pt")
+
+
 def generate_quiz(
     words: List[str],
-    dictionary: Dict[str, str],
+    dictionary: Dict[str, Dict[str, str]],
+    native_lang: str = DEFAULT_NATIVE,
     limit: int = 5
 ) -> List[Dict[str, Any]]:
     """
     Gera perguntas de tradução (múltipla escolha).
     """
-    available = [w for w in words if w in dictionary]
+    available = []
+    for w in words:
+        translation = get_translation(w, dictionary, native_lang)
+        if translation:
+            available.append((w, translation))
+
     if not available:
         return []
 
     selected = available[:limit] if len(available) <= limit else random.sample(available, limit)
-    all_translations = list(dictionary.values())
+
+    # Todas as traduções possíveis no idioma atual (para distratores)
+    all_translations = []
+    for entry in dictionary.values():
+        t = entry.get(native_lang) or entry.get("pt")
+        if t:
+            all_translations.append(t)
 
     questions = []
-    for word in selected:
-        correct = dictionary[word]
-
+    for word, correct in selected:
         distractors = [t for t in all_translations if t != correct]
         if len(distractors) >= 3:
             wrong = random.sample(distractors, 3)
         else:
-            wrong = distractors + ["(outra opção)"] * (3 - len(distractors))
+            wrong = distractors + ["???"] * (3 - len(distractors))
 
         options = wrong + [correct]
         random.shuffle(options)
@@ -59,34 +87,38 @@ def check_answer(question: Dict[str, Any], user_answer: str) -> bool:
     return user_answer.strip().lower() == question["correct"].strip().lower()
 
 
-def run_quiz(questions: List[Dict[str, Any]], vocabulary=None, enable_audio: bool = True) -> Dict[str, int]:
+def run_quiz(
+    questions: List[Dict[str, Any]],
+    vocabulary=None,
+    enable_audio: bool = True,
+    native_lang: str = DEFAULT_NATIVE,
+) -> Dict[str, int]:
     """
     Executa o quiz no terminal de forma interativa.
-    Se enable_audio=True, oferece ouvir a pronúncia da palavra.
     """
+    ui = get_ui(native_lang)
+
     if not questions:
         print("Nenhuma pergunta disponível para o quiz.")
         return {"correct": 0, "total": 0}
 
-    # Tenta importar o módulo de áudio (opcional)
     speak_word = None
     if enable_audio:
         try:
             from app.audio import speak_word as _speak
             speak_word = _speak
         except Exception:
-            print("(Áudio não disponível – instale com: pip install edge-tts)\n")
+            print(f"({ui['audio_unavailable']} – {ui['install_audio']})\n")
 
-    print(f"\n=== Quiz ({len(questions)} perguntas) ===\n")
+    print(f"\n=== {ui['quiz_title']} ({len(questions)} perguntas) ===\n")
     correct_count = 0
 
     for i, q in enumerate(questions, 1):
-        print(f"{i}. Qual o significado de: **{q['word']}**?")
+        print(f"{i}. {ui['meaning_of']}: **{q['word']}**?")
 
-        # Oferece ouvir a pronúncia
         if speak_word:
             try:
-                hear = input("   Ouvir pronúncia? (s/n): ").strip().lower()
+                hear = input(f"   {ui['hear_pronunciation']}").strip().lower()
                 if hear in ("s", "sim", "y", "yes"):
                     speak_word(q["word"])
             except Exception:
@@ -97,24 +129,24 @@ def run_quiz(questions: List[Dict[str, Any]], vocabulary=None, enable_audio: boo
 
         while True:
             try:
-                choice = input("\nSua resposta (número): ").strip()
+                choice = input(f"\n{ui['your_answer']}").strip()
                 choice_num = int(choice)
                 if 1 <= choice_num <= len(q["options"]):
                     break
-                print("Escolha um número válido.")
+                print("...")
             except ValueError:
-                print("Digite apenas o número da opção.")
+                print("...")
 
         selected = q["options"][choice_num - 1]
         is_correct = check_answer(q, selected)
 
         if is_correct:
-            print("✓ Correto!\n")
+            print(f"✓ {ui['correct']}\n")
             correct_count += 1
             if vocabulary:
                 vocabulary.mark_reviewed(q["word"])
         else:
-            print(f"✗ Errado. A resposta certa é: {q['correct']}\n")
+            print(f"✗ {ui['wrong']}: {q['correct']}\n")
 
-    print(f"Resultado: {correct_count}/{len(questions)} acertos")
+    print(f"{ui['result']}: {correct_count}/{len(questions)} {ui['hits']}")
     return {"correct": correct_count, "total": len(questions)}
