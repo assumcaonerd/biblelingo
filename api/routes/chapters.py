@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException
 
-from api.repositories.content_repo import ContentRepository
+from api.repositories.content_repo import ContentNotFoundError, ContentRepository
 from api.schemas.content import ChapterOut
 
 router = APIRouter()
@@ -10,20 +10,21 @@ router = APIRouter()
 
 @router.get("/chapters", response_model=list[str])
 def list_chapters():
-    """Lista livros disponíveis."""
-    repo = ContentRepository()
-    return repo.list_available_books()
+    """Lista livros disponíveis no manifest."""
+    return ContentRepository().list_available_books()
 
 
 @router.get("/chapters/{book}/{chapter}", response_model=ChapterOut)
 def get_chapter(book: str, chapter: int):
-    """Retorna os versículos de um capítulo."""
+    """Retorna versículos apenas se o capítulo estiver no manifest."""
     if chapter < 1:
         raise HTTPException(status_code=400, detail="chapter must be >= 1")
 
     repo = ContentRepository()
     try:
         data = repo.get_chapter(book, chapter)
+    except ContentNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
