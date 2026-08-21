@@ -5,6 +5,10 @@ data/audio_cache/
 data/biblelingo.db
 data/biblelingo.db-shm
 data/biblelingo.db-wal
+backups/
+.env
+.env.*
+!.env.example
 
 # Arquivos de progresso do usuário
 progress.json
