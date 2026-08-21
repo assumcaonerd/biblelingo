@@ -16,19 +16,68 @@ from .progress_repo import ProgressRepository
 from .vocabulary_repo import VocabularyRepository
 
 # Palavras iniciais de Gênesis 1 para quem ainda não tem vocabulário.
+# Cada entrada preserva a referência e o versículo exibido no contexto da pergunta.
 STARTER_WORDS = (
-    "beginning",
-    "god",
-    "created",
-    "heavens",
-    "earth",
-    "darkness",
-    "light",
-    "waters",
-    "spirit",
-    "day",
-    "night",
-    "good",
+    (
+        "beginning",
+        "Genesis 1:1",
+        "In the beginning, God created the heavens and the earth.",
+    ),
+    (
+        "god",
+        "Genesis 1:1",
+        "In the beginning, God created the heavens and the earth.",
+    ),
+    (
+        "created",
+        "Genesis 1:1",
+        "In the beginning, God created the heavens and the earth.",
+    ),
+    (
+        "heavens",
+        "Genesis 1:1",
+        "In the beginning, God created the heavens and the earth.",
+    ),
+    (
+        "earth",
+        "Genesis 1:1",
+        "In the beginning, God created the heavens and the earth.",
+    ),
+    (
+        "darkness",
+        "Genesis 1:2",
+        "Darkness was on the surface of the deep.",
+    ),
+    (
+        "light",
+        "Genesis 1:3",
+        "God said, Let there be light, and there was light.",
+    ),
+    (
+        "waters",
+        "Genesis 1:2",
+        "God's Spirit was hovering over the surface of the waters.",
+    ),
+    (
+        "spirit",
+        "Genesis 1:2",
+        "God's Spirit was hovering over the surface of the waters.",
+    ),
+    (
+        "day",
+        "Genesis 1:5",
+        "God called the light day, and the darkness he called night.",
+    ),
+    (
+        "night",
+        "Genesis 1:5",
+        "God called the light day, and the darkness he called night.",
+    ),
+    (
+        "good",
+        "Genesis 1:4",
+        "God saw the light, and saw that it was good.",
+    ),
 )
 
 
@@ -62,9 +111,9 @@ class ReviewRepository:
             vocabulary = self.vocabulary_repo.load(connection, user_id)
 
             if seed_if_empty and vocabulary.total_words() == 0:
-                for word in STARTER_WORDS:
+                for word, origin, context in STARTER_WORDS:
                     if get_translation(word, dictionary, native_lang):
-                        vocabulary.add_word(word, "Genesis 1", context="")
+                        vocabulary.add_word(word, origin, context=context)
                 self.vocabulary_repo.save(connection, vocabulary, user_id)
                 connection.commit()
 
