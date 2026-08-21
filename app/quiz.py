@@ -1,6 +1,6 @@
 """
 Gerador e executor de quizzes a partir do vocabulário.
-Suporta múltiplos idiomas nativos (pt, es, ...).
+Suporta múltiplos idiomas nativos, incluindo RTL (árabe e hebraico).
 """
 
 import json
@@ -8,7 +8,8 @@ import random
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from app.languages import DEFAULT_NATIVE, get_ui
+from app.languages import DEFAULT_NATIVE, get_ui, is_rtl
+from app.rtl import prepare_rtl
 
 
 def load_dictionary(path: str = "data/dictionary.json") -> Dict[str, Dict[str, str]]:
@@ -16,7 +17,7 @@ def load_dictionary(path: str = "data/dictionary.json") -> Dict[str, Dict[str, s
     Carrega o dicionário multi-idioma.
     Formato:
     {
-      "word": {"pt": "tradução", "es": "traducción"}
+      "word": {"pt": "tradução", "es": "traducción", "ar": "...", "he": "..."}
     }
     """
     file = Path(path)
@@ -31,7 +32,6 @@ def get_translation(word: str, dictionary: Dict, native_lang: str = DEFAULT_NATI
     entry = dictionary.get(word)
     if not entry:
         return None
-    # Tenta o idioma pedido, depois português como fallback
     return entry.get(native_lang) or entry.get("pt")
 
 
@@ -41,9 +41,7 @@ def generate_quiz(
     native_lang: str = DEFAULT_NATIVE,
     limit: int = 5
 ) -> List[Dict[str, Any]]:
-    """
-    Gera perguntas de tradução (múltipla escolha).
-    """
+    """Gera perguntas de tradução (múltipla escolha)."""
     available = []
     for w in words:
         translation = get_translation(w, dictionary, native_lang)
@@ -55,7 +53,6 @@ def generate_quiz(
 
     selected = available[:limit] if len(available) <= limit else random.sample(available, limit)
 
-    # Todas as traduções possíveis no idioma atual (para distratores)
     all_translations = []
     for entry in dictionary.values():
         t = entry.get(native_lang) or entry.get("pt")
@@ -87,15 +84,20 @@ def check_answer(question: Dict[str, Any], user_answer: str) -> bool:
     return user_answer.strip().lower() == question["correct"].strip().lower()
 
 
+def _t(text: str, lang: str) -> str:
+    """Aplica preparação RTL se o idioma for RTL."""
+    if is_rtl(lang):
+        return prepare_rtl(text, lang)
+    return text
+
+
 def run_quiz(
     questions: List[Dict[str, Any]],
     vocabulary=None,
     enable_audio: bool = True,
     native_lang: str = DEFAULT_NATIVE,
 ) -> Dict[str, int]:
-    """
-    Executa o quiz no terminal de forma interativa.
-    """
+    """Executa o quiz no terminal de forma interativa, com suporte RTL."""
     ui = get_ui(native_lang)
 
     if not questions:
@@ -108,28 +110,34 @@ def run_quiz(
             from app.audio import speak_word as _speak
             speak_word = _speak
         except Exception:
-            print(f"({ui['audio_unavailable']} – {ui['install_audio']})\n")
+            print(f"({_t(ui['audio_unavailable'], native_lang)} – {ui['install_audio']})\n")
 
-    print(f"\n=== {ui['quiz_title']} ({len(questions)} perguntas) ===\n")
+    title = _t(ui["quiz_title"], native_lang)
+    print(f"\n=== {title} ({len(questions)}) ===\n")
     correct_count = 0
 
     for i, q in enumerate(questions, 1):
-        print(f"{i}. {ui['meaning_of']}: **{q['word']}**?")
+        meaning = _t(ui["meaning_of"], native_lang)
+        print(f"{i}. {meaning}: **{q['word']}**?")
 
         if speak_word:
             try:
-                hear = input(f"   {ui['hear_pronunciation']}").strip().lower()
-                if hear in ("s", "sim", "y", "yes"):
+                prompt = _t(ui["hear_pronunciation"], native_lang)
+                hear = input(f"   {prompt}").strip().lower()
+                if hear in ("s", "sim", "y", "yes", "ن", "כ"):
                     speak_word(q["word"])
             except Exception:
                 pass
 
         for idx, opt in enumerate(q["options"], 1):
-            print(f"   {idx}. {opt}")
+            # Opções em árabe/hebraico precisam de reshape
+            display_opt = _t(opt, native_lang)
+            print(f"   {idx}. {display_opt}")
 
         while True:
             try:
-                choice = input(f"\n{ui['your_answer']}").strip()
+                prompt = _t(ui["your_answer"], native_lang)
+                choice = input(f"\n{prompt}").strip()
                 choice_num = int(choice)
                 if 1 <= choice_num <= len(q["options"]):
                     break
@@ -141,12 +149,15 @@ def run_quiz(
         is_correct = check_answer(q, selected)
 
         if is_correct:
-            print(f"✓ {ui['correct']}\n")
+            print(f"✓ {_t(ui['correct'], native_lang)}\n")
             correct_count += 1
             if vocabulary:
                 vocabulary.mark_reviewed(q["word"])
         else:
-            print(f"✗ {ui['wrong']}: {q['correct']}\n")
+            correct_display = _t(q["correct"], native_lang)
+            print(f"✗ {_t(ui['wrong'], native_lang)}: {correct_display}\n")
 
-    print(f"{ui['result']}: {correct_count}/{len(questions)} {ui['hits']}")
+    result_text = _t(ui["result"], native_lang)
+    hits_text = _t(ui["hits"], native_lang)
+    print(f"{result_text}: {correct_count}/{len(questions)} {hits_text}")
     return {"correct": correct_count, "total": len(questions)}
