@@ -40,7 +40,7 @@ Os serviços permanecem ativos nesta sessão. O segredo usado foi temporário e 
 
 ## Publicação e pendências
 
-As correções foram publicadas diretamente na branch `main` em sete commits sucessivos: `ec6784c`, `3714287`, `ea9e03e`, `abe388e`, `412eb62`, `f507009` e `7dfaec0`. O relatório foi inicialmente incluído no primeiro desses commits e finalizado no commit adicional `81e5e70`. A comparação byte a byte confirmou que os nove arquivos críticos publicados correspondem às versões testadas localmente. Um clone limpo do HEAD remoto também passou pelos 20 testes, pela compilação Python e pelo build Vite com `npm ci`.
+As correções foram publicadas diretamente na branch `main` em sete commits sucessivos: `ec6784c`, `3714287`, `ea9e03e`, `abe388e`, `412eb62`, `f507009` e `7dfaec0`. O relatório foi inicialmente incluído no primeiro desses commits e recebeu atualizações editoriais posteriores para refletir o estado publicado. A comparação byte a byte confirmou que os nove arquivos críticos publicados correspondem às versões testadas localmente. Um clone limpo do HEAD remoto também passou pelos 20 testes, pela compilação Python e pelo build Vite com `npm ci`.
 
 O único aviso não bloqueante restante é a depreciação do uso de `httpx` com `starlette.testclient`, emitida pela versão atual do Starlette. Ela não causou falha nos 20 testes; pode ser tratada posteriormente ao atualizar o contrato de testes para a recomendação da stack.
 
