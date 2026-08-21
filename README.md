@@ -2,37 +2,33 @@
 
 App estilo Duolingo para aprender inglês lendo e praticando com a Bíblia (World English Bible).
 
-Gamificação + leitura interativa + vocabulário + quiz + áudio + múltiplos idiomas.
+Gamificação + leitura + vocabulário + quiz + áudio + múltiplos idiomas + **RTL**.
 
 ## Objetivo
 
-Aprender inglês de forma natural através da leitura da Escritura. Texto da **World English Bible (WEB)** (domínio público).
+Aprender inglês através da leitura da Escritura. Texto da **World English Bible (WEB)** (domínio público).
 
 ## Idiomas nativos suportados
 
-O app ensina **inglês**. O usuário escolhe seu idioma nativo:
+| Código | Idioma       | Direção |
+|--------|--------------|---------|
+| `pt`   | Português 🇧🇷  | LTR     |
+| `es`   | Español 🇪🇸    | LTR     |
+| `en`   | English 🇺🇸    | LTR     |
+| `ar`   | العربية 🇸🇦     | **RTL** |
+| `he`   | עברית 🇮🇱      | **RTL** |
 
-| Código | Idioma              | Direção |
-|--------|---------------------|---------|
-| `pt`   | Português 🇧🇷         | LTR     |
-| `es`   | Español 🇪🇸           | LTR     |
-| `en`   | English 🇺🇸           | LTR     |
-| `ar`   | العربية 🇸🇦            | RTL     |
-| `he`   | עברית 🇮🇱             | RTL     |
+## Suporte RTL
 
-A interface e as traduções do quiz mudam conforme o idioma escolhido.
+Para árabe e hebraico o app usa:
+- **arabic-reshaper** → conecta as letras árabes corretamente
+- **python-bidi** → aplica o algoritmo bidirecional do Unicode
 
-## O que já funciona
+Assim o texto aparece legível no terminal.
 
-- XP e níveis
-- Streak (dias consecutivos)
-- Carregamento de Gênesis
-- Extração de palavras
-- Vocabulário do usuário
-- Quiz interativo (múltipla escolha)
-- Áudio com edge-tts + cache
-- Suporte a **português, espanhol, inglês, árabe e hebraico**
-- Persistência em JSON
+```bash
+pip install arabic-reshaper python-bidi
+```
 
 ## Como rodar
 
@@ -43,7 +39,16 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Na primeira tela você escolhe o idioma nativo.
+## O que já funciona
+
+- XP e níveis
+- Streak
+- Gênesis 1
+- Vocabulário
+- Quiz interativo
+- Áudio (edge-tts + cache)
+- Português, espanhol, inglês, **árabe** e **hebraico**
+- Exibição correta de textos RTL
 
 ## Estrutura
 
@@ -56,10 +61,11 @@ biblelingo/
 │   ├── vocabulary.py
 │   ├── quiz.py
 │   ├── audio.py
-│   └── languages.py
+│   ├── languages.py
+│   └── rtl.py              ← suporte RTL
 ├── data/
 │   ├── genesis_sample.json
-│   ├── dictionary.json   (pt, es, ar, he)
+│   ├── dictionary.json
 │   └── audio_cache/
 ├── main.py
 └── requirements.txt
