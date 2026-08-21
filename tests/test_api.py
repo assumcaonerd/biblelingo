@@ -23,17 +23,54 @@ class ApiTests(unittest.TestCase):
             os.environ["BIBLELINGO_DB_PATH"] = self.previous_db_path
         self.temp_dir.cleanup()
 
-    def test_health_and_progress_are_available(self):
-        health = self.client.get("/health")
-        progress = self.client.get("/v1/progress")
+    def _register(self, email: str, password: str = "secret123", native: str = "pt") -> dict:
+        response = self.client.post(
+            "/v1/auth/register",
+            json={"email": email, "password": password, "native_language": native},
+        )
+        self.assertEqual(response.status_code, 201, response.text)
+        return response.json()
 
+    def _auth_header(self, token: str) -> dict:
+        return {"Authorization": f"Bearer {token}"}
+
+    def test_health_is_public(self):
+        health = self.client.get("/health")
         self.assertEqual(health.status_code, 200)
         self.assertEqual(health.json()["status"], "ok")
-        self.assertEqual(progress.status_code, 200)
-        self.assertEqual(progress.json()["xp"], 0)
-        self.assertEqual(progress.json()["level"], 1)
+
+    def test_progress_requires_auth(self):
+        response = self.client.get("/v1/progress")
+        self.assertEqual(response.status_code, 401)
+
+    def test_register_login_and_me(self):
+        created = self._register("alice@example.com")
+        self.assertIn("access_token", created)
+        self.assertEqual(created["user"]["email"], "alice@example.com")
+
+        login = self.client.post(
+            "/v1/auth/login",
+            json={"email": "alice@example.com", "password": "secret123"},
+        )
+        self.assertEqual(login.status_code, 200)
+        token = login.json()["access_token"]
+
+        me = self.client.get("/v1/me", headers=self._auth_header(token))
+        self.assertEqual(me.status_code, 200)
+        self.assertEqual(me.json()["email"], "alice@example.com")
+
+    def test_duplicate_email_is_rejected(self):
+        self._register("dup@example.com")
+        second = self.client.post(
+            "/v1/auth/register",
+            json={"email": "dup@example.com", "password": "secret123"},
+        )
+        self.assertEqual(second.status_code, 409)
 
     def test_review_answer_is_atomic_and_idempotent(self):
+        auth = self._register("alice@example.com")
+        headers = self._auth_header(auth["access_token"])
+
         payload = {
             "word": "light",
             "selected": "luz",
@@ -41,16 +78,8 @@ class ApiTests(unittest.TestCase):
             "idempotency_key": "session-1-question-1",
         }
 
-        first = self.client.post(
-            "/v1/reviews/answer",
-            json=payload,
-            headers={"X-User-ID": "alice"},
-        )
-        repeated = self.client.post(
-            "/v1/reviews/answer",
-            json=payload,
-            headers={"X-User-ID": "alice"},
-        )
+        first = self.client.post("/v1/reviews/answer", json=payload, headers=headers)
+        repeated = self.client.post("/v1/reviews/answer", json=payload, headers=headers)
 
         self.assertEqual(first.status_code, 200, first.text)
         self.assertEqual(repeated.status_code, 200, repeated.text)
@@ -60,14 +89,14 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(first.json()["xp_awarded"], 10)
         self.assertEqual(repeated.json()["xp_awarded"], 10)
 
-        progress = self.client.get(
-            "/v1/progress",
-            headers={"X-User-ID": "alice"},
-        ).json()
+        progress = self.client.get("/v1/progress", headers=headers).json()
         self.assertEqual(progress["xp"], 10)
         self.assertEqual(progress["current_streak"], 1)
 
     def test_users_are_isolated(self):
+        alice = self._register("alice@example.com")
+        bob = self._register("bob@example.com")
+
         response = self.client.post(
             "/v1/reviews/answer",
             json={
@@ -76,18 +105,19 @@ class ApiTests(unittest.TestCase):
                 "native_lang": "pt",
                 "idempotency_key": "same-key",
             },
-            headers={"X-User-ID": "alice"},
+            headers=self._auth_header(alice["access_token"]),
         )
         self.assertEqual(response.status_code, 200)
 
         bob_progress = self.client.get(
             "/v1/progress",
-            headers={"X-User-ID": "bob"},
+            headers=self._auth_header(bob["access_token"]),
         ).json()
         self.assertEqual(bob_progress["xp"], 0)
         self.assertEqual(bob_progress["current_streak"], 0)
 
     def test_server_rejects_unknown_translation(self):
+        auth = self._register("carol@example.com")
         response = self.client.post(
             "/v1/reviews/answer",
             json={
@@ -96,6 +126,7 @@ class ApiTests(unittest.TestCase):
                 "native_lang": "xx",
                 "idempotency_key": "invalid-language",
             },
+            headers=self._auth_header(auth["access_token"]),
         )
         self.assertEqual(response.status_code, 422)
 
