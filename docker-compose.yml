@@ -6,12 +6,14 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
-      BIBLELINGO_ENV: ${BIBLELINGO_ENV:-production}
+      # development facilita o primeiro `docker compose up` local
+      BIBLELINGO_ENV: ${BIBLELINGO_ENV:-development}
+      BIBLELINGO_SECRET_KEY: ${BIBLELINGO_SECRET_KEY:-dev-secret-change-me-in-production-32chars}
       BIBLELINGO_DB_PATH: /app/data/biblelingo.db
-      # Origem do frontend servido pelo compose (porta 3000)
-      BIBLELINGO_CORS_ORIGINS: ${BIBLELINGO_CORS_ORIGINS:-http://127.0.0.1:3000,http://localhost:3000}
+      BIBLELINGO_CORS_ORIGINS: ${BIBLELINGO_CORS_ORIGINS:-http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:5173,http://localhost:5173}
     volumes:
       - biblelingo_data:/app/data
     restart: unless-stopped
@@ -20,7 +22,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
 
   frontend:
     build:
