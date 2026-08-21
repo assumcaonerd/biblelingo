@@ -27,7 +27,9 @@ export function Review() {
       .then((data) => {
         setQuestions(data.questions);
         if (data.count === 0) {
-          setLoadError("Nenhuma palavra para revisar agora.");
+          setLoadError(
+            "Nenhuma palavra vencida. Leia um capítulo e use “Praticar palavras deste capítulo” para semear o vocabulário."
+          );
         }
       })
       .catch((err) =>
@@ -43,16 +45,15 @@ export function Review() {
     setBusy(true);
     setError("");
     try {
-      const questionKey = `${current.word}-${index}`;
+      const questionKey = current.question_id;
       const idempotencyKey =
         idempotencyKeys.current[questionKey] ??
         `web-${questionKey}-${crypto.randomUUID()}`;
       idempotencyKeys.current[questionKey] = idempotencyKey;
 
       const res = await api.answerReview(token, {
-        word: current.word,
+        question_id: current.question_id,
         selected,
-        native_lang: native,
         idempotency_key: idempotencyKey,
       });
       setResult(res);
@@ -86,7 +87,7 @@ export function Review() {
       <div className="card">
         <h1>Prática</h1>
         <p className="muted">{loadError}</p>
-        <Link to="/">Voltar</Link>
+        <Link to="/read">Ir para a leitura</Link>
       </div>
     );
   }
@@ -113,7 +114,11 @@ export function Review() {
           >
             Ver progresso
           </Link>
-          <button type="button" className="secondary" onClick={() => window.location.reload()}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => window.location.reload()}
+          >
             Praticar de novo
           </button>
         </div>
@@ -145,7 +150,14 @@ export function Review() {
             <SpeakButton text={current.context} label="Ouvir versículo" rate={0.9} />
           </p>
         )}
-        <h2 style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
+        <h2
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+            alignItems: "center",
+          }}
+        >
           <span>
             Qual o significado de <em>{current.word}</em>?
           </span>
@@ -155,7 +167,12 @@ export function Review() {
         {!result && (
           <div className="quiz-options">
             {current.options.map((opt) => (
-              <button key={opt} type="button" disabled={busy} onClick={() => answer(opt)}>
+              <button
+                key={opt}
+                type="button"
+                disabled={busy}
+                onClick={() => answer(opt)}
+              >
                 {opt}
               </button>
             ))}
