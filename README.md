@@ -16,11 +16,34 @@ Licença: **[MIT](LICENSE)** · Conteúdo bíblico: WEB (domínio público)
 
 ## Requisitos mínimos
 
+**Opção A — Docker (recomendado para experimentar rápido)**
+
+- Docker + Docker Compose
+
+**Opção B — nativo**
+
 - **Python** >= 3.12
 - **Node.js** >= 18
-- npm (ou compatível)
 
-## Subir em desenvolvimento (dois terminais)
+## Subir com Docker (um comando)
+
+```bash
+docker compose up --build
+```
+
+| Serviço | URL |
+| --- | --- |
+| App | http://127.0.0.1:3000 |
+| API | http://127.0.0.1:8000 |
+| Docs | http://127.0.0.1:8000/docs |
+
+- Nginx do frontend faz proxy de `/api` → container `api` (mesmo contrato do Vite).
+- SQLite persiste no volume `biblelingo_data`.
+- Opcional: `cp .env.example .env` e ajuste `BIBLELINGO_SECRET_KEY` antes do up.
+
+Parar: `docker compose down` (mantém o volume). Remover dados: `docker compose down -v`.
+
+## Subir nativo (dois terminais)
 
 **Terminal 1 — API** (na raiz):
 
@@ -43,9 +66,8 @@ npm run dev
 
 - App: http://127.0.0.1:5173  
 - API: http://127.0.0.1:8000  
-- Docs: http://127.0.0.1:8000/docs  
 
-Variáveis: [`.env.example`](.env.example) (raiz), [`api/.env.example`](api/.env.example), [`frontend/.env.example`](frontend/.env.example).
+Variáveis: [`.env.example`](.env.example), [`api/.env.example`](api/.env.example), [`frontend/.env.example`](frontend/.env.example).
 
 ## Fluxo pedagógico
 
