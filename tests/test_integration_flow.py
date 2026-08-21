@@ -145,13 +145,12 @@ class FullLearningFlowTests(unittest.TestCase):
             headers=alice_h,
         )
         self.assertEqual(answer.status_code, 200)
+        answer_body = answer.json()
 
-        self.assertGreater(
-            self.client.get("/v1/progress", headers=alice_h).json()["xp"], 0
-        )
-        self.assertEqual(
-            self.client.get("/v1/progress", headers=bob_h).json()["xp"], 0
-        )
+        alice_progress = self.client.get("/v1/progress", headers=alice_h).json()
+        bob_progress = self.client.get("/v1/progress", headers=bob_h).json()
+        self.assertEqual(alice_progress["xp"], answer_body["xp_awarded"])
+        self.assertEqual(bob_progress["xp"], 0)
 
 
 if __name__ == "__main__":
