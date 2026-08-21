@@ -49,8 +49,9 @@ O frontend revalida o token com `GET /v1/me` ao carregar.
 1. Criar conta ou entrar
 2. Dashboard (nível, XP, streak)
 3. Ler Gênesis 1
-4. Praticar palavras via `GET /v1/reviews/due` + `POST /v1/reviews/answer`
-5. Ver progresso atualizado
+4. **Praticar palavras deste capítulo** → `POST /v1/vocabulary/seed`
+5. Fila via `GET /v1/reviews/due` + respostas em `POST /v1/reviews/answer`
+6. Progresso atualizado
 
 ## API (resumo)
 
@@ -60,6 +61,7 @@ O frontend revalida o token com `GET /v1/me` ao carregar.
 | POST | `/v1/auth/login` | público |
 | GET | `/v1/me` | JWT |
 | GET | `/v1/progress` | JWT |
+| POST | `/v1/vocabulary/seed` | JWT |
 | GET | `/v1/reviews/due` | JWT |
 | POST | `/v1/reviews/answer` | JWT |
 | GET | `/v1/chapters/{book}/{chapter}` | público |
@@ -73,15 +75,25 @@ Docs: http://127.0.0.1:8000/docs
 python -m unittest discover -s tests -v
 ```
 
+Inclui testes unitários da API e **integração do fluxo completo** em `tests/test_integration_flow.py`:
+
+- leitura do capítulo
+- seed idempotente
+- fila due
+- resposta correta / incorreta
+- XP e streak
+- isolamento entre usuários
+
 ## Próximos passos (auditoria)
 
 1. ~~CI/CD~~
 2. ~~Sessão JWT robusta~~
-3. Seed idempotente por capítulo (leitura → vocabulário → prática)
-4. Áudio no frontend
-5. Dashboard com meta diária
-6. Expansão controlada de capítulos
-7. Produção (segredo forte, HTTPS, backups)
+3. ~~Seed idempotente por capítulo~~
+4. ~~Testes de integração do fluxo completo~~
+5. Dashboard de estatísticas / meta diária
+6. Áudio no frontend
+7. Expansão controlada de capítulos
+8. Produção (segredo forte, HTTPS, backups)
 
 ## Licença
 
