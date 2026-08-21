@@ -63,7 +63,9 @@ describe("Review", () => {
     renderReview();
 
     await waitFor(() => {
-      expect(screen.getByText(/light/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /Qual o significado de light/i })
+      ).toBeInTheDocument();
     });
 
     expect(sessionMock).toHaveBeenCalledWith("test-jwt-token", 5, "pt");

@@ -102,6 +102,26 @@ def connect(path: str | Path | None = None) -> sqlite3.Connection:
     return connection
 
 
+def connect_readonly(path: str | Path | None = None) -> sqlite3.Connection:
+    """Conexão somente leitura (sem migração WAL forçada na abertura)."""
+    resolved = database_path(path)
+    if not resolved.exists():
+        # Cria arquivo vazio via conexão normal para path inexistente em dev/test
+        initialize_database(resolved)
+    uri = f"file:{resolved.resolve().as_posix()}?mode=ro"
+    connection = sqlite3.connect(
+        uri,
+        uri=True,
+        timeout=30,
+        isolation_level=None,
+        check_same_thread=False,
+    )
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA query_only = ON")
+    connection.execute("PRAGMA busy_timeout = 5000")
+    return connection
+
+
 def initialize_database(path: str | Path | None = None) -> None:
     """Cria as tabelas caso ainda não existam e aplica migrações leves."""
     with connect(path) as connection:
