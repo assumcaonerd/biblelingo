@@ -29,6 +29,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B011"]
+"api/**" = ["B008"]  # FastAPI Depends()/Query() em defaults
 
 [tool.ruff.format]
 quote-style = "double"
