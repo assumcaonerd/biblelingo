@@ -29,8 +29,9 @@ class Vocabulary:
 
         if normalized in self.words:
             entry = self.words[normalized]
-            entry["origin"] = verse_ref
-            if context:
+            if not entry.get("origin"):
+                entry["origin"] = verse_ref
+            if context and not entry.get("context"):
                 entry["context"] = context
             return False
 
