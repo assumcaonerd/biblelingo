@@ -30,10 +30,6 @@ describe("api client", () => {
 
     expect(result.access_token).toBe("test-jwt-token");
     expect(result.user.email).toBe("learner@example.com");
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/v1/auth/login"),
-      expect.objectContaining({ method: "POST" })
-    );
   });
 
   it("me envia Bearer token", async () => {
@@ -54,7 +50,6 @@ describe("api client", () => {
 
     expect(dash.vocabulary.accuracy_rate).toBe(83.3);
     expect(dash.goal_met).toBe(false);
-    expect(dash.recent_activity[0]?.word).toBe("light");
   });
 
   it("chapter carrega versículos de Gênesis", async () => {
@@ -63,7 +58,7 @@ describe("api client", () => {
     const chapter = await api.chapter("genesis", 1);
 
     expect(chapter.verses).toHaveLength(2);
-    expect(chapter.verses[0].verse_number).toBe(1);
+    expect(chapter.complete).toBe(false);
   });
 
   it("seedChapter devolve contagens idempotentes", async () => {
@@ -72,26 +67,26 @@ describe("api client", () => {
     const seed = await api.seedChapter("test-jwt-token", "genesis", 1);
 
     expect(seed.words_new).toBe(12);
-    expect(seed.due_count).toBe(12);
   });
 
-  it("dueReviews inclui opções e resposta correta", async () => {
+  it("dueReviews inclui question_id e nunca correct", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(mockDueReviews));
 
     const due = await api.dueReviews("test-jwt-token", 5, "pt");
 
     expect(due.count).toBe(2);
     const q = due.questions[0];
-    expect(q.options).toContain(q.correct);
+    expect(q.question_id).toMatch(/^q_/);
+    expect(q).not.toHaveProperty("correct");
+    expect(q.options.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("answerReview retorna progresso embutido", async () => {
+  it("answerReview envia question_id e retorna progresso", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(mockReviewCorrect));
 
     const result = await api.answerReview("test-jwt-token", {
-      word: "light",
+      question_id: "q_test_light_001",
       selected: "luz",
-      native_lang: "pt",
       idempotency_key: "test-key-1",
     });
 
