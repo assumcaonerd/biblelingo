@@ -55,8 +55,26 @@ CREATE TABLE IF NOT EXISTS review_events (
     next_review TEXT NOT NULL,
     review_streak INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
+    question_id TEXT,
     PRIMARY KEY (user_id, idempotency_key)
 );
+
+CREATE TABLE IF NOT EXISTS study_questions (
+    question_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    word TEXT NOT NULL,
+    correct_answer TEXT NOT NULL,
+    options_json TEXT NOT NULL,
+    context TEXT NOT NULL DEFAULT '',
+    origin TEXT NOT NULL DEFAULT '',
+    native_lang TEXT NOT NULL DEFAULT 'pt',
+    answered INTEGER NOT NULL DEFAULT 0 CHECK (answered IN (0, 1)),
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_study_questions_user
+    ON study_questions (user_id, answered);
 """
 
 
@@ -85,6 +103,16 @@ def connect(path: str | Path | None = None) -> sqlite3.Connection:
 
 
 def initialize_database(path: str | Path | None = None) -> None:
-    """Cria as tabelas caso ainda não existam."""
+    """Cria as tabelas caso ainda não existam e aplica migrações leves."""
     with connect(path) as connection:
         connection.executescript(SCHEMA)
+        _migrate_review_events_question_id(connection)
+
+
+def _migrate_review_events_question_id(connection: sqlite3.Connection) -> None:
+    cols = {
+        row[1]
+        for row in connection.execute("PRAGMA table_info(review_events)").fetchall()
+    }
+    if "question_id" not in cols:
+        connection.execute("ALTER TABLE review_events ADD COLUMN question_id TEXT")
