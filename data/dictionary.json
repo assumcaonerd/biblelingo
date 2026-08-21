@@ -3,294 +3,343 @@
     "pt": "começo / princípio",
     "es": "principio / comienzo",
     "ar": "بداية",
-    "he": "ראשית / התחלה"
+    "he": "ראשית / התחלה",
+    "en": "the start; the first part"
   },
   "god": {
     "pt": "Deus",
     "es": "Dios",
     "ar": "الله",
-    "he": "אלוהים"
+    "he": "אלוהים",
+    "en": "the supreme being in the Bible"
   },
   "created": {
     "pt": "criou",
     "es": "creó",
     "ar": "خلق",
-    "he": "ברא"
+    "he": "ברא",
+    "en": "made something new"
   },
   "heavens": {
     "pt": "céus",
     "es": "cielos",
     "ar": "السموات",
-    "he": "שמים"
+    "he": "שמים",
+    "en": "the sky or the places above the earth"
   },
   "earth": {
     "pt": "terra",
     "es": "tierra",
     "ar": "الأرض",
-    "he": "ארץ"
+    "he": "ארץ",
+    "en": "the world; the land"
   },
   "formless": {
     "pt": "sem forma",
     "es": "sin forma",
     "ar": "بلا شكل",
-    "he": "תוהו"
+    "he": "תוהו",
+    "en": "without a shape or form"
   },
   "empty": {
     "pt": "vazio",
     "es": "vacío",
     "ar": "فارغ",
-    "he": "בוהו / ריק"
+    "he": "בוהו / ריק",
+    "en": "containing nothing"
   },
   "darkness": {
     "pt": "escuridão",
     "es": "oscuridad",
     "ar": "ظلام",
-    "he": "חושך"
+    "he": "חושך",
+    "en": "the absence of light"
   },
   "surface": {
     "pt": "superfície",
     "es": "superficie",
     "ar": "سطح",
-    "he": "פני"
+    "he": "פני",
+    "en": "the top or outside layer"
   },
   "deep": {
     "pt": "abismo",
     "es": "abismo",
     "ar": "عمق / غمر",
-    "he": "תהום"
+    "he": "תהום",
+    "en": "far down; a great depth"
   },
   "spirit": {
     "pt": "Espírito",
     "es": "Espíritu",
     "ar": "روح",
-    "he": "רוח"
+    "he": "רוח",
+    "en": "a non-physical being or presence"
   },
   "hovering": {
     "pt": "pairava",
     "es": "se movía / se cernía",
     "ar": "يرفرف",
-    "he": "מרחפת"
+    "he": "מרחפת",
+    "en": "staying above or moving lightly over something"
   },
   "waters": {
     "pt": "águas",
     "es": "aguas",
     "ar": "مياه",
-    "he": "מים"
+    "he": "מים",
+    "en": "areas or amounts of water"
   },
   "said": {
     "pt": "disse",
     "es": "dijo",
     "ar": "قال",
-    "he": "אמר"
+    "he": "אמר",
+    "en": "spoke or expressed words"
   },
   "light": {
     "pt": "luz",
     "es": "luz",
     "ar": "نور",
-    "he": "אור"
+    "he": "אור",
+    "en": "brightness that lets us see"
   },
   "saw": {
     "pt": "viu",
     "es": "vio",
     "ar": "رأى",
-    "he": "ראה"
+    "he": "ראה",
+    "en": "noticed with the eyes"
   },
   "good": {
     "pt": "bom",
     "es": "bueno",
     "ar": "حسن / جيد",
-    "he": "טוב"
+    "he": "טוב",
+    "en": "right, useful, or pleasing"
   },
   "divided": {
     "pt": "separou",
     "es": "separó",
     "ar": "فصل",
-    "he": "הבדיל"
+    "he": "הבדיל",
+    "en": "separated into parts"
   },
   "called": {
     "pt": "chamou",
     "es": "llamó",
     "ar": "دعى / سمّى",
-    "he": "קרא"
+    "he": "קרא",
+    "en": "gave a name to or spoke to"
   },
   "day": {
     "pt": "dia",
     "es": "día",
     "ar": "يوم",
-    "he": "יום"
+    "he": "יום",
+    "en": "the period when there is daylight"
   },
   "night": {
     "pt": "noite",
     "es": "noche",
     "ar": "ليل",
-    "he": "לילה"
+    "he": "לילה",
+    "en": "the dark period after sunset"
   },
   "evening": {
     "pt": "tarde",
     "es": "tarde",
     "ar": "مساء",
-    "he": "ערב"
+    "he": "ערב",
+    "en": "the time near the end of the day"
   },
   "morning": {
     "pt": "manhã",
     "es": "mañana",
     "ar": "صباح",
-    "he": "בוקר"
+    "he": "בוקר",
+    "en": "the early part of the day"
   },
   "first": {
     "pt": "primeiro",
     "es": "primero",
     "ar": "أول",
-    "he": "ראשון"
+    "he": "ראשון",
+    "en": "before all others in time or order"
   },
   "expanse": {
     "pt": "firmamento / expansão",
     "es": "expansión / firmamento",
     "ar": "جلد / فضاء",
-    "he": "רקיע"
+    "he": "רקיע",
+    "en": "a wide open area or space"
   },
   "middle": {
     "pt": "meio",
     "es": "medio",
     "ar": "وسط",
-    "he": "תוך"
+    "he": "תוך",
+    "en": "the central part of something"
   },
   "divide": {
     "pt": "dividir",
     "es": "dividir",
     "ar": "يفصل",
-    "he": "להבדיל"
+    "he": "להבדיל",
+    "en": "to separate into parts"
   },
   "made": {
     "pt": "fez",
     "es": "hizo",
     "ar": "صنع",
-    "he": "עשה"
+    "he": "עשה",
+    "en": "created or produced"
   },
   "under": {
     "pt": "debaixo",
     "es": "debajo",
     "ar": "تحت",
-    "he": "מתחת"
+    "he": "מתחת",
+    "en": "in a lower position than something"
   },
   "above": {
     "pt": "acima",
     "es": "arriba",
     "ar": "فوق",
-    "he": "מעל"
+    "he": "מעל",
+    "en": "in a higher position than something"
   },
   "sky": {
     "pt": "céu",
     "es": "cielo",
     "ar": "سماء",
-    "he": "שמים"
+    "he": "שמים",
+    "en": "the space above the earth"
   },
   "second": {
     "pt": "segundo",
     "es": "segundo",
     "ar": "ثانٍ",
-    "he": "שני"
+    "he": "שני",
+    "en": "after the first in order"
   },
   "gathered": {
     "pt": "reunidas",
     "es": "reunidas",
     "ar": "اجتمعت",
-    "he": "נקוו"
+    "he": "נקוו",
+    "en": "brought together"
   },
   "together": {
     "pt": "juntas",
     "es": "juntas",
     "ar": "معاً",
-    "he": "יחד"
+    "he": "יחד",
+    "en": "with each other; in one group"
   },
   "place": {
     "pt": "lugar",
     "es": "lugar",
     "ar": "مكان",
-    "he": "מקום"
+    "he": "מקום",
+    "en": "a particular area or location"
   },
   "dry": {
     "pt": "seco",
     "es": "seco",
     "ar": "يابس",
-    "he": "יבשה"
+    "he": "יבשה",
+    "en": "without water or moisture"
   },
   "land": {
     "pt": "terra firme",
     "es": "tierra seca",
     "ar": "يابسة",
-    "he": "יבשה"
+    "he": "יבשה",
+    "en": "the solid ground or earth"
   },
   "appear": {
     "pt": "apareça",
     "es": "aparezca",
     "ar": "تظهر",
-    "he": "תראה"
+    "he": "תראה",
+    "en": "to become visible"
   },
   "seas": {
     "pt": "mares",
     "es": "mares",
     "ar": "بحار",
-    "he": "ימים"
+    "he": "ימים",
+    "en": "large areas of salt water"
   },
   "yield": {
     "pt": "produza",
     "es": "produzca",
     "ar": "تنبت",
-    "he": "תדשא"
+    "he": "תדשא",
+    "en": "to produce or provide"
   },
   "grass": {
     "pt": "erva",
     "es": "hierba",
     "ar": "عشب",
-    "he": "דשא"
+    "he": "דשא",
+    "en": "green plants with narrow leaves"
   },
   "herbs": {
     "pt": "ervas",
     "es": "hierbas",
     "ar": "أعشاب",
-    "he": "עשב"
+    "he": "עשב",
+    "en": "small plants used for food or medicine"
   },
   "yielding": {
     "pt": "que produzem",
     "es": "que producen",
     "ar": "تُخرج",
-    "he": "מזריע"
+    "he": "מזריע",
+    "en": "producing or giving something"
   },
   "seeds": {
     "pt": "sementes",
     "es": "semillas",
     "ar": "بذور",
-    "he": "זרעים"
+    "he": "זרעים",
+    "en": "small parts from which plants grow"
   },
   "fruit": {
     "pt": "fruto",
     "es": "fruto",
     "ar": "ثمر",
-    "he": "פרי"
+    "he": "פרי",
+    "en": "the part of a plant that contains seeds"
   },
   "trees": {
     "pt": "árvores",
     "es": "árboles",
     "ar": "أشجار",
-    "he": "עצים"
+    "he": "עצים",
+    "en": "large plants with trunks and branches"
   },
   "bearing": {
     "pt": "que dão",
     "es": "que dan",
     "ar": "تحمل",
-    "he": "עושה"
+    "he": "עושה",
+    "en": "producing or carrying something"
   },
   "kind": {
     "pt": "espécie",
     "es": "especie",
     "ar": "جنس",
-    "he": "מין"
+    "he": "מין",
+    "en": "a group or type with shared qualities"
   },
   "seed": {
     "pt": "semente",
     "es": "semilla",
     "ar": "بذرة",
-    "he": "זרע"
+    "he": "זרע",
+    "en": "a small part from which a plant grows"
   }
 }
