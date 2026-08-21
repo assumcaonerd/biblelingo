@@ -1,4 +1,5 @@
 import io
+
 import json
 import random
 import tempfile
@@ -16,6 +17,7 @@ from app.domain.quiz import (
 )
 from app.domain.vocabulary import Vocabulary as DomainVocabulary
 
+from app.parser import clean_word
 from app.progress import Progress
 from app.quiz import generate_quiz, get_translation, load_dictionary
 from app.vocabulary import Vocabulary
@@ -63,6 +65,13 @@ class VocabularyTests(unittest.TestCase):
         self.assertEqual(vocabulary.words["light"]["reviews"], 2)
         self.assertIn("next_review", vocabulary.words["light"])
 
+    def test_repeated_word_keeps_first_context(self):
+        vocabulary = DomainVocabulary()
+        vocabulary.add_word("waters", "Genesis 1:2", "Genesis context")
+        vocabulary.add_word("waters", "Psalms 23:2", "Psalm context")
+        self.assertEqual(vocabulary.words["waters"]["origin"], "Genesis 1:2")
+        self.assertEqual(vocabulary.words["waters"]["context"], "Genesis context")
+
 
 class QuizTests(unittest.TestCase):
     def test_missing_translation_does_not_fallback_to_portuguese(self):
@@ -81,6 +90,17 @@ class QuizTests(unittest.TestCase):
         dictionary = load_dictionary()
         self.assertTrue(dictionary)
         self.assertTrue(all(entry.get("en") for entry in dictionary.values()))
+
+    def test_additional_chapter_dictionary_is_loaded(self):
+        dictionary = load_dictionary()
+        self.assertEqual(get_translation("shepherd", dictionary, native_lang="pt"), "pastor")
+        self.assertEqual(get_translation("shepherd", dictionary, native_lang="he"), "רועה")
+
+
+class ParserTests(unittest.TestCase):
+    def test_curly_english_possessive_is_normalized(self):
+        self.assertEqual(clean_word("name’s"), "name")
+        self.assertEqual(clean_word("God's"), "god")
 
 
 class DomainContractTests(unittest.TestCase):
