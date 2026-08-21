@@ -67,6 +67,25 @@ class ApiTests(unittest.TestCase):
         )
         self.assertEqual(second.status_code, 409)
 
+    def test_due_reviews_seed_and_return_questions(self):
+        auth = self._register("due@example.com")
+        headers = self._auth_header(auth["access_token"])
+
+        response = self.client.get("/v1/reviews/due?limit=3", headers=headers)
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        self.assertGreaterEqual(body["count"], 1)
+        self.assertEqual(body["native_lang"], "pt")
+        first = body["questions"][0]
+        self.assertIn("word", first)
+        self.assertIn("options", first)
+        self.assertIn("correct", first)
+        self.assertIn(first["correct"], first["options"])
+
+    def test_due_requires_auth(self):
+        response = self.client.get("/v1/reviews/due")
+        self.assertEqual(response.status_code, 401)
+
     def test_review_answer_is_atomic_and_idempotent(self):
         auth = self._register("alice@example.com")
         headers = self._auth_header(auth["access_token"])
