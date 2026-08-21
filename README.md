@@ -2,11 +2,23 @@
 
 App estilo Duolingo para aprender inglês lendo e praticando com a Bíblia (World English Bible).
 
-Gamificação + leitura interativa + vocabulário + quiz + áudio.
+Gamificação + leitura interativa + vocabulário + quiz + áudio + **múltiplos idiomas**.
 
 ## Objetivo
 
 Aprender inglês de forma natural através da leitura da Escritura. Texto da **World English Bible (WEB)** (domínio público).
+
+## Idiomas suportados
+
+O app ensina **inglês**. O usuário pode escolher seu idioma nativo:
+
+| Código | Idioma     |
+|--------|------------|
+| `pt`   | Português  |
+| `es`   | Español    |
+| `en`   | English    |
+
+A interface e as traduções do quiz mudam conforme o idioma escolhido.
 
 ## O que já funciona
 
@@ -16,8 +28,8 @@ Aprender inglês de forma natural através da leitura da Escritura. Texto da **W
 - Extração de palavras
 - Vocabulário do usuário
 - Quiz interativo (múltipla escolha)
-- Áudio com **edge-tts** + **cache automático**
-- Controle de velocidade da fala
+- Áudio com edge-tts + cache
+- **Suporte a múltiplos idiomas nativos**
 - Persistência em JSON
 
 ## Como rodar
@@ -29,23 +41,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Fluxo atual:
-1. Mostra Gênesis 1
-2. Oferece ouvir o texto em inglês
-3. Extrai e salva palavras novas
-4. Roda quiz (com opção de ouvir a pronúncia)
-5. Dá XP e atualiza o streak
-
-## Áudio
-
-Usamos **edge-tts** (Microsoft Edge TTS):
-- Gratuito e sem API key
-- Cache automático em `data/audio_cache/`
-- Velocidade mais lenta por padrão (melhor para aprender)
-
-```bash
-pip install edge-tts
-```
+Na primeira tela você escolhe o idioma nativo. Depois o fluxo segue normalmente.
 
 ## Estrutura
 
@@ -57,11 +53,12 @@ biblelingo/
 │   ├── parser.py
 │   ├── vocabulary.py
 │   ├── quiz.py
-│   └── audio.py
+│   ├── audio.py
+│   └── languages.py      ← config de idiomas + textos da UI
 ├── data/
 │   ├── genesis_sample.json
-│   ├── dictionary.json
-│   └── audio_cache/      (gerado automaticamente)
+│   ├── dictionary.json   ← traduções pt + es
+│   └── audio_cache/
 ├── main.py
 └── requirements.txt
 ```
