@@ -24,30 +24,18 @@ def generate_quiz(
 ) -> List[Dict[str, Any]]:
     """
     Gera perguntas de tradução (múltipla escolha).
-
-    Cada pergunta tem o formato:
-    {
-        "type": "translate",
-        "word": "created",
-        "options": ["criou", "correu", "comeu", "dormiu"],
-        "correct": "criou"
-    }
     """
-    # Filtra só as palavras que existem no dicionário
     available = [w for w in words if w in dictionary]
     if not available:
         return []
 
     selected = available[:limit] if len(available) <= limit else random.sample(available, limit)
-
-    # Lista de traduções possíveis para gerar distratores
     all_translations = list(dictionary.values())
 
     questions = []
     for word in selected:
         correct = dictionary[word]
 
-        # Gera 3 opções erradas
         distractors = [t for t in all_translations if t != correct]
         if len(distractors) >= 3:
             wrong = random.sample(distractors, 3)
@@ -68,24 +56,42 @@ def generate_quiz(
 
 
 def check_answer(question: Dict[str, Any], user_answer: str) -> bool:
-    """Verifica se a resposta está correta (aceita o texto da opção)."""
     return user_answer.strip().lower() == question["correct"].strip().lower()
 
 
-def run_quiz(questions: List[Dict[str, Any]], vocabulary=None) -> Dict[str, int]:
+def run_quiz(questions: List[Dict[str, Any]], vocabulary=None, enable_audio: bool = True) -> Dict[str, int]:
     """
     Executa o quiz no terminal de forma interativa.
-    Retorna {"correct": X, "total": Y}
+    Se enable_audio=True, oferece ouvir a pronúncia da palavra.
     """
     if not questions:
         print("Nenhuma pergunta disponível para o quiz.")
         return {"correct": 0, "total": 0}
+
+    # Tenta importar o módulo de áudio (opcional)
+    speak_word = None
+    if enable_audio:
+        try:
+            from app.audio import speak_word as _speak
+            speak_word = _speak
+        except Exception:
+            print("(Áudio não disponível – instale com: pip install edge-tts)\n")
 
     print(f"\n=== Quiz ({len(questions)} perguntas) ===\n")
     correct_count = 0
 
     for i, q in enumerate(questions, 1):
         print(f"{i}. Qual o significado de: **{q['word']}**?")
+
+        # Oferece ouvir a pronúncia
+        if speak_word:
+            try:
+                hear = input("   Ouvir pronúncia? (s/n): ").strip().lower()
+                if hear in ("s", "sim", "y", "yes"):
+                    speak_word(q["word"])
+            except Exception:
+                pass
+
         for idx, opt in enumerate(q["options"], 1):
             print(f"   {idx}. {opt}")
 
