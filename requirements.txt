@@ -1,0 +1,2 @@
+# Por enquanto não precisa de dependências externas.
+# Quando formos para web (Flask) ou outras libs, adicionamos aqui.
