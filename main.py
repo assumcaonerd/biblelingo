@@ -1,12 +1,6 @@
 """
 Ponto de entrada do BibleLingo.
-Fluxo atual:
-1. Carrega progresso (XP + streak)
-2. Carrega Gênesis 1
-3. Oferece ouvir o texto
-4. Extrai palavras e adiciona ao vocabulário
-5. Roda um quiz (com opção de ouvir a pronúncia)
-6. Dá XP e salva tudo
+Suporte a múltiplos idiomas nativos (pt, es, en).
 """
 
 from app.progress import Progress
@@ -14,11 +8,37 @@ from app.bible_loader import load_book, get_chapter, format_chapter, get_verse_t
 from app.parser import extract_words
 from app.vocabulary import Vocabulary
 from app.quiz import load_dictionary, generate_quiz, run_quiz
+from app.languages import (
+    DEFAULT_NATIVE,
+    SUPPORTED_NATIVE_LANGUAGES,
+    get_ui,
+    get_native_language_name,
+)
+
+
+def choose_language() -> str:
+    """Pergunta ao usuário qual é o idioma nativo dele."""
+    print("Idiomas disponíveis:")
+    for code, info in SUPPORTED_NATIVE_LANGUAGES.items():
+        print(f"  {code} – {info['flag']} {info['name']}")
+
+    while True:
+        choice = input(f"\nSeu idioma nativo [{DEFAULT_NATIVE}]: ").strip().lower()
+        if not choice:
+            return DEFAULT_NATIVE
+        if choice in SUPPORTED_NATIVE_LANGUAGES:
+            return choice
+        print("Opção inválida. Use: pt, es ou en")
 
 
 def main():
-    print("=== BibleLingo ===")
-    print("Aprendendo inglês com a Bíblia\n")
+    # Escolha do idioma nativo
+    native_lang = choose_language()
+    ui = get_ui(native_lang)
+
+    print(f"\n=== {ui['app_title']} ===")
+    print(f"{ui['subtitle']}")
+    print(f"Idioma nativo: {get_native_language_name(native_lang)}\n")
 
     # 1. Carrega progresso e vocabulário
     progress = Progress()
@@ -30,30 +50,29 @@ def main():
     dictionary = load_dictionary()
 
     # 2. Carrega Gênesis
-    print("Carregando Gênesis 1...")
+    print(ui["loading_chapter"])
     try:
         book = load_book("genesis")
         chapter_verses = get_chapter(book, 1)
         chapter_text = format_chapter(chapter_verses)
 
-        print("\n--- Gênesis 1 ---")
+        print("\n--- Genesis 1 ---")
         print(chapter_text)
         print("-----------------\n")
 
-        # Oferece ouvir o capítulo (ou os primeiros versículos)
+        # Oferece ouvir o capítulo
         try:
             from app.audio import speak
-            hear = input("Quer ouvir o texto em inglês? (s/n): ").strip().lower()
+            hear = input(ui["hear_text"]).strip().lower()
             if hear in ("s", "sim", "y", "yes"):
-                # Fala só os primeiros versículos para não ficar muito longo
                 first_verses = " ".join(
                     get_verse_text(v) for v in chapter_verses[:4]
                 )
-                print("Reproduzindo...\n")
+                print(f"{ui['playing']}\n")
                 speak(first_verses)
         except Exception as e:
-            print(f"(Áudio indisponível: {e})")
-            print("Instale com: pip install edge-tts\n")
+            print(f"({ui['audio_unavailable']}: {e})")
+            print(f"{ui['install_audio']}\n")
 
         # 3. Extrai palavras e adiciona ao vocabulário
         total_new = 0
@@ -70,19 +89,29 @@ def main():
             )
             total_new += new_count
 
-        print(f"\nPalavras novas adicionadas: {total_new}")
-        print(f"Total no vocabulário: {vocab.total_words()}")
+        print(f"\n{ui['new_words']}: {total_new}")
+        print(f"{ui['total_words']}: {vocab.total_words()}")
 
         sample_words = list(vocab.words.keys())[:8]
         if sample_words:
-            print(f"Exemplos: {', '.join(sample_words)}")
+            print(f"{ui['examples']}: {', '.join(sample_words)}")
 
-        # 4. Gera e roda o quiz
+        # 4. Gera e roda o quiz no idioma nativo escolhido
         quiz_words = vocab.get_words_for_quiz(limit=5)
-        questions = generate_quiz(quiz_words, dictionary, limit=5)
+        questions = generate_quiz(
+            quiz_words,
+            dictionary,
+            native_lang=native_lang,
+            limit=5
+        )
 
         if questions:
-            result = run_quiz(questions, vocabulary=vocab, enable_audio=True)
+            result = run_quiz(
+                questions,
+                vocabulary=vocab,
+                enable_audio=True,
+                native_lang=native_lang,
+            )
             quiz_xp = result["correct"] * 10
         else:
             print("\nAinda não há palavras suficientes no dicionário para o quiz.")
@@ -96,10 +125,10 @@ def main():
         xp_base = 30 + (total_new * 5) + quiz_xp
         xp_final = int(xp_base * bonus)
 
-        print(f"\nBônus de streak: x{bonus}")
+        print(f"\n{ui['streak_bonus']}: x{bonus}")
         progress.add_xp(
             xp_final,
-            f"leitura + {total_new} palavras + {result['correct']} acertos no quiz"
+            f"leitura + {total_new} palavras + {result['correct']} acertos"
         )
 
         # 6. Salva tudo
@@ -110,11 +139,11 @@ def main():
         print(e)
         print("\nO sample data/genesis_sample.json já está no repositório.")
 
-    print("\n--- Estado atual ---")
-    print(f"Nível: {progress.level}")
-    print(f"XP: {progress.xp}")
-    print(f"Streak: {progress.current_streak} dias")
-    print(f"Palavras no vocabulário: {vocab.total_words()}")
+    print(f"\n--- Estado atual ---")
+    print(f"{ui['level']}: {progress.level}")
+    print(f"{ui['xp']}: {progress.xp}")
+    print(f"{ui['streak']}: {progress.current_streak} {ui['days']}")
+    print(f"{ui['words_in_vocab']}: {vocab.total_words()}")
 
 
 if __name__ == "__main__":
