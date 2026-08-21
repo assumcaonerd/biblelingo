@@ -27,15 +27,30 @@ npm run dev
 
 Abra http://127.0.0.1:5173
 
-O Vite faz proxy de `/api` para a API em `:8000`. CORS também está liberado para o dev server.
+## CI
+
+Todo push e pull request em `main` dispara GitHub Actions:
+
+- **Backend:** `compileall`, validação dos JSONs em `data/`, `unittest`
+- **Frontend:** `npm install` / `npm ci` e `npm run build`
+
+## Sessão JWT
+
+O frontend revalida o token com `GET /v1/me` ao carregar.
+
+| Situação | Comportamento |
+| --- | --- |
+| Token válido | Dashboard normal |
+| 401 | Limpa sessão e pede login |
+| API fora | Mantém sessão local e avisa |
 
 ## Fluxo do vertical slice
 
 1. Criar conta ou entrar
-2. Ver dashboard (nível, XP, streak)
+2. Dashboard (nível, XP, streak)
 3. Ler Gênesis 1
-4. Praticar palavras (respostas vão para `POST /v1/reviews/answer`)
-5. Voltar ao dashboard e ver o progresso atualizado
+4. Praticar palavras via `GET /v1/reviews/due` + `POST /v1/reviews/answer`
+5. Ver progresso atualizado
 
 ## API (resumo)
 
@@ -45,17 +60,12 @@ O Vite faz proxy de `/api` para a API em `:8000`. CORS também está liberado pa
 | POST | `/v1/auth/login` | público |
 | GET | `/v1/me` | JWT |
 | GET | `/v1/progress` | JWT |
+| GET | `/v1/reviews/due` | JWT |
 | POST | `/v1/reviews/answer` | JWT |
 | GET | `/v1/chapters/{book}/{chapter}` | público |
 | GET | `/health` | público |
 
 Docs: http://127.0.0.1:8000/docs
-
-## CLI
-
-```bash
-python main.py
-```
 
 ## Testes
 
@@ -63,22 +73,15 @@ python main.py
 python -m unittest discover -s tests -v
 ```
 
-## Estrutura
+## Próximos passos (auditoria)
 
-```text
-biblelingo/
-├── app/domain/       # regras puras
-├── api/              # FastAPI + SQLite + JWT
-├── frontend/         # React + Vite
-├── tests/
-└── main.py           # CLI
-```
-
-## Próximos passos
-
-- `GET /v1/reviews/due` alimentando o quiz pelo servidor
-- Áudio no frontend
-- CI, migrações versionadas e deploy
+1. ~~CI/CD~~
+2. ~~Sessão JWT robusta~~
+3. Seed idempotente por capítulo (leitura → vocabulário → prática)
+4. Áudio no frontend
+5. Dashboard com meta diária
+6. Expansão controlada de capítulos
+7. Produção (segredo forte, HTTPS, backups)
 
 ## Licença
 
