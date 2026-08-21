@@ -10,8 +10,11 @@ Documentação interativa:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.config import load_runtime_config, validate_runtime_config
 from api.database import initialize_database
 from api.routes import api_router
+
+runtime_config = load_runtime_config()
 
 app = FastAPI(
     title="BibleLingo API",
@@ -19,18 +22,15 @@ app = FastAPI(
         "API do BibleLingo – aprender inglês lendo e ouvindo a Bíblia. "
         "Autenticação por JWT. O domínio de regras vive em app/domain/."
     ),
-    version="0.3.0",
+    version="0.4.0",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
-    ],
+    allow_origins=list(runtime_config.cors_origins),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
 )
 
 app.include_router(api_router)
@@ -38,7 +38,8 @@ app.include_router(api_router)
 
 @app.on_event("startup")
 def startup() -> None:
-    """Garante que as tabelas existam antes da primeira requisição."""
+    """Valida a configuração e garante as tabelas antes das requisições."""
+    validate_runtime_config()
     initialize_database()
 
 
@@ -46,15 +47,17 @@ def startup() -> None:
 def root():
     return {
         "service": "biblelingo",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "docs": "/docs",
         "health": "/health",
+        "ready": "/health/ready",
         "auth": {
             "register": "POST /v1/auth/register",
             "login": "POST /v1/auth/login",
             "me": "GET /v1/me",
         },
         "progress": "GET /v1/progress",
+        "dashboard": "GET /v1/dashboard",
         "chapters": "GET /v1/chapters",
         "review_answer": "POST /v1/reviews/answer",
     }
