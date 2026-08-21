@@ -1,6 +1,6 @@
 """
 Ponto de entrada do BibleLingo.
-Suporte a múltiplos idiomas nativos (pt, es, en).
+Suporte a múltiplos idiomas nativos (pt, es, en, ar, he).
 """
 
 from app.progress import Progress
@@ -18,17 +18,18 @@ from app.languages import (
 
 def choose_language() -> str:
     """Pergunta ao usuário qual é o idioma nativo dele."""
-    print("Idiomas disponíveis:")
+    print("Idiomas disponíveis / Available languages:")
     for code, info in SUPPORTED_NATIVE_LANGUAGES.items():
         print(f"  {code} – {info['flag']} {info['name']}")
 
+    codes = ", ".join(SUPPORTED_NATIVE_LANGUAGES.keys())
     while True:
         choice = input(f"\nSeu idioma nativo [{DEFAULT_NATIVE}]: ").strip().lower()
         if not choice:
             return DEFAULT_NATIVE
         if choice in SUPPORTED_NATIVE_LANGUAGES:
             return choice
-        print("Opção inválida. Use: pt, es ou en")
+        print(f"Opção inválida. Use: {codes}")
 
 
 def main():
@@ -64,7 +65,7 @@ def main():
         try:
             from app.audio import speak
             hear = input(ui["hear_text"]).strip().lower()
-            if hear in ("s", "sim", "y", "yes"):
+            if hear in ("s", "sim", "y", "yes", "ن", "כ"):
                 first_verses = " ".join(
                     get_verse_text(v) for v in chapter_verses[:4]
                 )
