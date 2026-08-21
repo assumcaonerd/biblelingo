@@ -1,83 +1,86 @@
 # BibleLingo
 
-Aprenda inglês lendo, ouvindo e praticando a **World English Bible (WEB)**. O BibleLingo combina leitura contextual, pronúncia em inglês, vocabulário pessoal, revisão espaçada e gamificação leve em uma única experiência.
+Aprenda inglês lendo, ouvindo e praticando a **World English Bible (WEB)**. Combina leitura contextual, pronúncia, vocabulário, revisão espaçada e gamificação leve.
 
-A arquitetura mantém uma camada de domínio compartilhada por três clientes: o **CLI** (`python main.py`), a **API** FastAPI com JWT e SQLite transacional, e o **frontend** React/Vite com login, leitura, áudio, quiz e dashboard.
+Licença: **[MIT](LICENSE)** · Conteúdo bíblico: WEB (domínio público)
 
-## Conteúdo disponível
+## Estrutura do monorepo
 
-Cada lição é composta por texto WEB, contexto bíblico preservado no vocabulário e traduções completas para português, espanhol, inglês, árabe e hebraico. O carregador modular mescla `data/dictionary.json` com arquivos adicionais no formato `data/dictionary_*.json`.
-
-| Lição | Conteúdo | Prática |
+| Pasta | Função | Detalhes |
 | --- | --- | --- |
-| Gênesis 1 | Sample WEB para desenvolvimento e testes | Seed idempotente e revisão contextual |
-| Salmos 23 | Seis versículos WEB em `data/psalms_sample.json` | 54 entradas traduzidas em `data/dictionary_psalms23.json` |
+| [`frontend/`](frontend/README.md) | UI React 18 + Vite 5 + TypeScript | Login, leitura, áudio, quiz, dashboard |
+| [`api/`](api/README.md) | FastAPI + JWT + SQLite | HTTP, auth, persistência |
+| [`app/domain/`](app/domain/) | Domínio puro em Python | Progresso, vocabulário, quiz (sem I/O) |
+| [`tests/`](tests/) | `unittest` | API, integração do fluxo, dashboard |
+| [`data/`](data/) | WEB samples + dicionários | JSON versionado (leve) |
 
-A expansão de capítulos é deliberadamente controlada: cada novo capítulo deve incluir o sample WEB, as traduções nos cinco idiomas, os testes de API/domínio e a opção correspondente no leitor.
+## Requisitos mínimos
+
+- **Python** >= 3.12
+- **Node.js** >= 18
+- npm (ou compatível)
+
+## Subir em desenvolvimento (dois terminais)
+
+**Terminal 1 — API** (na raiz):
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env        # opcional em development
+uvicorn api.main:app --reload
+```
+
+**Terminal 2 — Frontend:**
+
+```bash
+cd frontend
+npm ci
+cp .env.example .env        # opcional
+npm run dev
+```
+
+- App: http://127.0.0.1:5173  
+- API: http://127.0.0.1:8000  
+- Docs: http://127.0.0.1:8000/docs  
+
+Variáveis: [`.env.example`](.env.example) (raiz), [`api/.env.example`](api/.env.example), [`frontend/.env.example`](frontend/.env.example).
 
 ## Fluxo pedagógico
 
 | Etapa | Comportamento |
 | --- | --- |
 | Conta | Registro, login e revalidação JWT em `/v1/me` |
-| Leitura | Seleção de Gênesis 1 ou Salmos 23, com áudio por versículo ou capítulo |
-| Vocabulário | Seed no servidor, com origem e contexto do primeiro aparecimento da palavra |
-| Prática | Perguntas de múltipla escolha vindas de `GET /v1/reviews/due` |
-| Revisão | Resposta atômica e idempotente em `POST /v1/reviews/answer` |
-| Progresso | XP, níveis, streak diário, bônus de streak e dashboard de atividade |
+| Leitura | Gênesis 1 / Salmos 23, áudio por versículo ou capítulo |
+| Vocabulário | `POST /v1/vocabulary/seed` (idempotente) |
+| Prática | `GET /v1/reviews/due` + `POST /v1/reviews/answer` |
+| Progresso | XP, streak, dashboard (`GET /v1/dashboard`) |
 
-## Subir em desenvolvimento
+## Conteúdo disponível
 
-Na raiz do projeto, instale as dependências e inicie a API:
+| Lição | Conteúdo |
+| --- | --- |
+| Gênesis 1 | Sample WEB + dicionário base |
+| Salmos 23 | `data/psalms_sample.json` + `data/dictionary_psalms23.json` |
 
-```bash
-pip install -r requirements.txt
-uvicorn api.main:app --reload
-```
-
-Em outro terminal, inicie o frontend:
-
-```bash
-cd frontend
-npm ci
-npm run dev
-```
-
-Abra <http://127.0.0.1:5173>. A API fica disponível em <http://127.0.0.1:8000>, com documentação interativa em `/docs`.
-
-## Áudio e acessibilidade
-
-A pronúncia no frontend usa a **Web Speech API** com voz `en-US`, sem depender de uma chamada ao backend. O leitor oferece “Ouvir capítulo” e um botão por versículo; a prática oferece áudio da palavra, do versículo e repetição após a resposta. Se o navegador não oferecer uma voz compatível, a falha é apresentada discretamente e o quiz continua funcionando.
-
-As traduções de árabe e hebraico preservam o suporte a RTL na camada de apresentação do CLI. A camada de domínio não contém I/O de terminal nem lógica específica de direção de texto.
+Traduções: português, espanhol, inglês, árabe e hebraico.
 
 ## API principal
 
-| Método | Rota | Autenticação |
+| Método | Rota | Auth |
 | --- | --- | --- |
-| POST | `/v1/auth/register` | Pública |
-| POST | `/v1/auth/login` | Pública |
+| POST | `/v1/auth/register` | público |
+| POST | `/v1/auth/login` | público |
 | GET | `/v1/me` | JWT |
 | GET | `/v1/dashboard` | JWT |
-| GET | `/v1/progress` | JWT |
 | POST | `/v1/vocabulary/seed` | JWT |
 | GET | `/v1/reviews/due` | JWT |
 | POST | `/v1/reviews/answer` | JWT |
-| GET | `/v1/chapters/{book}/{chapter}` | Pública |
-| GET | `/health` | Pública |
-| GET | `/health/ready` | Pública |
+| GET | `/v1/chapters/{book}/{chapter}` | público |
+| GET | `/health` | público |
 
-O endpoint de seed processa o capítulo no servidor e é idempotente. O endpoint de resposta usa uma chave de idempotência por usuário e pergunta, evitando duplicação de XP ou de revisão quando uma requisição é repetida.
-
-## Produção e segurança
-
-A configuração de produção exige `BIBLELINGO_SECRET_KEY` com pelo menos 32 caracteres, CORS explícito sem `*`, expiração de token válida e um caminho persistente para o SQLite. O startup falha rapidamente quando a configuração é insegura; `/health/ready` verifica também a disponibilidade funcional do banco.
-
-O procedimento operacional completo de inicialização, backup online, restauração atômica, permissões e verificações está em [`PRODUCTION_RUNBOOK.md`](PRODUCTION_RUNBOOK.md). Não armazene segredos, tokens ou backups no repositório.
-
-## CI, testes e build
-
-O workflow de CI verifica a compilação Python, os JSONs de conteúdo, a suíte `unittest` e o build do frontend. Para reproduzir localmente:
+## Testes e CI
 
 ```bash
 python -m compileall app api tests main.py
@@ -85,8 +88,18 @@ python -m unittest discover -s tests -v
 cd frontend && npm ci && npm run build
 ```
 
-A cobertura inclui autenticação, isolamento entre usuários, seed idempotente, revisão idempotente, opções de quiz sem placeholders, possessivos ingleses, contexto bíblico estável, dicionários modulares, Salmos 23 e endurecimento de produção.
+GitHub Actions (`.github/workflows/ci.yml`) roda isso em todo push/PR na `main`.
+
+## Produção
+
+Ver [`PRODUCTION_RUNBOOK.md`](PRODUCTION_RUNBOOK.md). Em production: `BIBLELINGO_SECRET_KEY` forte (≥ 32 chars), CORS sem `*`, SQLite em disco persistente.
+
+## Contribuição
+
+1. Leia o README da camada que for alterar (`frontend/` ou `api/`).
+2. Mantenha testes verdes e o build do frontend passando.
+3. Não versionar `.env`, segredos ou backups.
 
 ## Licença e conteúdo
 
-O projeto usa a World English Bible como fonte de conteúdo público. Antes de distribuir novos livros ou capítulos, confirme a licença da fonte e mantenha os arquivos de conteúdo e testes correspondentes versionados no repositório.
+Código sob [MIT](LICENSE). Textos da World English Bible em domínio público — confirme a fonte antes de distribuir novos capítulos.
