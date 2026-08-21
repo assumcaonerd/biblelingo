@@ -72,6 +72,16 @@ export type DueReviews = {
   questions: DueQuestion[];
 };
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 function authHeaders(token: string | null): HeadersInit {
   const headers: HeadersInit = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -87,7 +97,9 @@ async function handle<T>(res: Response): Promise<T> {
     } catch {
       /* ignore */
     }
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    const message =
+      typeof detail === "string" ? detail : JSON.stringify(detail);
+    throw new ApiError(res.status, message);
   }
   return res.json() as Promise<T>;
 }
