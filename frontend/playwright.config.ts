@@ -4,26 +4,30 @@ const FRONTEND_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:5173";
 const API_URL = process.env.PLAYWRIGHT_API_URL ?? "http://127.0.0.1:8000";
 
 /**
- * E2E exige API + frontend no ar.
- * Local:  terminal 1 → uvicorn api.main:app --reload
- *         terminal 2 → npm run dev
- *         npm run test:e2e
+ * Workers paralelos: cada teste usa e-mail único e contexto isolado.
+ * A API SQLite aguenta concorrência moderada (WAL + busy_timeout).
  *
- * CI: o job sobe ambos antes do Playwright.
+ * Local:  uvicorn api.main:app --reload  +  npm run test:e2e
+ * CI: job sobe a API e o Vite via webServer.
  */
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: false,
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: 1,
-  reporter: process.env.CI ? "github" : "list",
+  // CI: 2 workers para não saturar SQLite; local: default do Playwright
+  workers: process.env.CI ? 2 : process.env.PLAYWRIGHT_WORKERS
+    ? Number(process.env.PLAYWRIGHT_WORKERS)
+    : undefined,
+  reporter: process.env.CI ? [["github"], ["list"]] : "list",
   timeout: 60_000,
   expect: { timeout: 15_000 },
   use: {
     baseURL: FRONTEND_URL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    // Contexto limpo por teste (sem cookies/storage compartilhados)
+    storageState: undefined,
   },
   projects: [
     {
@@ -33,14 +37,12 @@ export default defineConfig({
   ],
   webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
     ? undefined
-    : [
-        {
-          command: "npm run dev -- --host 127.0.0.1 --port 5173",
-          url: FRONTEND_URL,
-          reuseExistingServer: !process.env.CI,
-          timeout: 120_000,
-        },
-      ],
+    : {
+        command: "npm run dev -- --host 127.0.0.1 --port 5173",
+        url: FRONTEND_URL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
   metadata: {
     apiUrl: API_URL,
   },
