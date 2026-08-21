@@ -6,13 +6,24 @@ import { Reader } from "./pages/Reader";
 import { Review } from "./pages/Review";
 
 function Protected({ children }: { children: React.ReactNode }) {
-  const { token } = useAuth();
+  const { token, ready } = useAuth();
+  if (!ready) {
+    return <p className="muted">Validando sessão…</p>;
+  }
   if (!token) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
 
 function Shell() {
-  const { token, user, logout } = useAuth();
+  const { token, user, ready, sessionError, logout } = useAuth();
+
+  if (!ready) {
+    return (
+      <div className="app-shell">
+        <p className="muted">Carregando…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -38,6 +49,12 @@ function Shell() {
           )}
         </div>
       </nav>
+
+      {sessionError && (
+        <p className={token ? "muted" : "error"} style={{ marginTop: 0 }}>
+          {sessionError}
+        </p>
+      )}
 
       <Routes>
         <Route path="/auth" element={<AuthPage />} />
