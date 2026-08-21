@@ -1,4 +1,4 @@
-"""Operações atômicas de revisão e idempotência."""
+"""Operações atômicas de revisão, idempotência e palavras vencidas."""
 
 from __future__ import annotations
 
@@ -7,13 +7,29 @@ from datetime import date, datetime, timezone
 from typing import Any
 
 from app.domain.progress import Progress
-from app.domain.quiz import get_translation
+from app.domain.quiz import generate_quiz, get_translation
 from app.quiz import load_dictionary
 
 from api.database import DEFAULT_USER_ID
 from api.schemas.progress import LevelProgress, ProgressResponse
 from .progress_repo import ProgressRepository
 from .vocabulary_repo import VocabularyRepository
+
+# Palavras iniciais de Gênesis 1 para quem ainda não tem vocabulário.
+STARTER_WORDS = (
+    "beginning",
+    "god",
+    "created",
+    "heavens",
+    "earth",
+    "darkness",
+    "light",
+    "waters",
+    "spirit",
+    "day",
+    "night",
+    "good",
+)
 
 
 class ReviewInputError(ValueError):
@@ -26,6 +42,82 @@ class ReviewRepository:
     def __init__(self, progress_repo: ProgressRepository | None = None):
         self.progress_repo = progress_repo or ProgressRepository()
         self.vocabulary_repo = VocabularyRepository()
+
+    def list_due(
+        self,
+        *,
+        user_id: str = DEFAULT_USER_ID,
+        native_lang: str = "pt",
+        limit: int = 5,
+        today: date | None = None,
+        seed_if_empty: bool = True,
+    ) -> dict[str, Any]:
+        """Retorna perguntas de palavras vencidas (ou seed inicial)."""
+        review_date = today or date.today()
+        limit = max(1, min(int(limit), 20))
+        dictionary = load_dictionary()
+
+        connection = self.progress_repo.transaction()
+        try:
+            vocabulary = self.vocabulary_repo.load(connection, user_id)
+
+            if seed_if_empty and vocabulary.total_words() == 0:
+                for word in STARTER_WORDS:
+                    if get_translation(word, dictionary, native_lang):
+                        vocabulary.add_word(word, "Genesis 1", context="")
+                self.vocabulary_repo.save(connection, vocabulary, user_id)
+                connection.commit()
+
+            due_words = vocabulary.get_due_words(limit=limit * 2, today=review_date)
+            if not due_words:
+                # Sem vencidas: usa as menos praticadas para não deixar a sessão vazia.
+                due_words = vocabulary.get_words_for_quiz(
+                    limit=limit * 2, due_only=False, today=review_date
+                )
+
+            contexts = {
+                w: str(vocabulary.words.get(w, {}).get("context") or "")
+                for w in due_words
+            }
+            origins = {
+                w: str(vocabulary.words.get(w, {}).get("origin") or "")
+                for w in due_words
+            }
+
+            questions = generate_quiz(
+                due_words,
+                dictionary,
+                native_lang=native_lang,
+                limit=limit,
+                contexts=contexts,
+            )
+
+            payload = []
+            for q in questions:
+                entry = vocabulary.words.get(q.word, {})
+                next_review = entry.get("next_review")
+                payload.append(
+                    {
+                        "word": q.word,
+                        "options": list(q.options),
+                        "correct": q.correct,
+                        "context": q.context,
+                        "origin": origins.get(q.word, ""),
+                        "next_review": next_review,
+                    }
+                )
+
+            connection.commit()
+            return {
+                "count": len(payload),
+                "native_lang": native_lang,
+                "questions": payload,
+            }
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
 
     def answer(
         self,
