@@ -37,7 +37,6 @@ vi.mock("../auth", () => ({
   }),
 }));
 
-// SpeakButton usa speechSynthesis; evita ruído nos testes.
 vi.mock("../components/SpeakButton", () => ({
   SpeakButton: ({ label }: { label?: string }) => (
     <button type="button">{label ?? "Ouvir"}</button>
@@ -58,23 +57,20 @@ describe("Review", () => {
     answerMock.mockReset();
   });
 
-  it("carrega pergunta due e opções", async () => {
+  it("carrega pergunta due e opções sem campo correct", async () => {
     dueMock.mockResolvedValueOnce(mockDueReviews);
 
     renderReview();
-
-    expect(screen.getByText(/Carregando palavras vencidas/i)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText(/light/i)).toBeInTheDocument();
     });
 
     expect(screen.getByRole("button", { name: "luz" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "escuridão" })).toBeInTheDocument();
     expect(dueMock).toHaveBeenCalledWith("test-jwt-token", 5, "pt");
   });
 
-  it("ao acertar mostra feedback de XP", async () => {
+  it("ao acertar envia question_id e mostra XP", async () => {
     const user = userEvent.setup();
     dueMock.mockResolvedValueOnce(mockDueReviews);
     answerMock.mockResolvedValueOnce(mockReviewCorrect);
@@ -94,22 +90,27 @@ describe("Review", () => {
     expect(answerMock).toHaveBeenCalledWith(
       "test-jwt-token",
       expect.objectContaining({
-        word: "light",
+        question_id: "q_test_light_001",
         selected: "luz",
-        native_lang: "pt",
       })
     );
+    const payload = answerMock.mock.calls[0][1] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty("word");
+    expect(payload).not.toHaveProperty("native_lang");
   });
 
-  it("mostra mensagem quando não há palavras", async () => {
-    dueMock.mockResolvedValueOnce({ count: 0, native_lang: "pt", questions: [] });
+  it("mostra mensagem quando não há palavras vencidas", async () => {
+    dueMock.mockResolvedValueOnce({
+      count: 0,
+      native_lang: "pt",
+      questions: [],
+      mode: "due",
+    });
 
     renderReview();
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/Nenhuma palavra para revisar agora/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Nenhuma palavra vencida/i)).toBeInTheDocument();
     });
   });
 });
