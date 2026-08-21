@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, type Chapter, type SeedResult } from "../api";
 import { useAuth } from "../auth";
+import { SpeakButton } from "../components/SpeakButton";
 
 export function Reader() {
   const { token } = useAuth();
@@ -35,11 +36,14 @@ export function Reader() {
     }
   }
 
+  const fullChapterText =
+    chapter?.verses.map((v) => v.text).join(" ") ?? "";
+
   return (
     <div>
       <h1>Genesis 1</h1>
       <p className="muted">
-        World English Bible — leia com atenção e depois pratique as palavras deste capítulo.
+        World English Bible — leia e ouça, depois pratique as palavras deste capítulo.
       </p>
 
       {loading && <p className="muted">Carregando…</p>}
@@ -47,12 +51,27 @@ export function Reader() {
 
       {chapter && (
         <div className="card">
+          <div className="actions" style={{ marginTop: 0, marginBottom: "1rem" }}>
+            <SpeakButton text={fullChapterText} label="Ouvir capítulo" rate={0.95} />
+          </div>
           <div className="verse-list">
             {chapter.verses.map((v) => (
-              <p key={v.verse_number} className="verse">
-                <span className="verse-num">{v.verse_number}</span>
-                {v.text}
-              </p>
+              <div
+                key={v.verse_number}
+                className="verse"
+                style={{
+                  display: "flex",
+                  gap: "0.5rem",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                }}
+              >
+                <p style={{ margin: 0, flex: 1 }}>
+                  <span className="verse-num">{v.verse_number}</span>
+                  {v.text}
+                </p>
+                <SpeakButton text={v.text} label="▶" rate={0.9} className="ghost" />
+              </div>
             ))}
           </div>
         </div>
