@@ -1,4 +1,4 @@
-"""Endpoints de revisão: palavras vencidas e resposta."""
+"""Endpoints de revisão: palavras vencidas e resposta autenticada."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -21,7 +21,7 @@ def list_due_reviews(
     native_lang: str | None = Query(default=None, min_length=2, max_length=8),
     user: dict = Depends(get_current_user),
 ):
-    """Retorna perguntas de palavras vencidas (ou seed inicial)."""
+    """Palavras vencidas apenas. Não faz seed e não envia a resposta correta."""
     lang = (native_lang or user.get("native_language") or "pt").strip().lower()
     if lang not in SUPPORTED_NATIVE_LANGUAGES:
         raise HTTPException(
@@ -42,13 +42,12 @@ def answer_review(
     payload: ReviewAnswerRequest,
     user_id: str = Depends(get_user_id),
 ):
-    """Corrige uma resposta e persiste revisão + XP atomicamente."""
+    """Corrige resposta apenas para question_id emitido ao usuário."""
     try:
         return ReviewRepository().answer(
             user_id=user_id,
-            word=payload.word,
+            question_id=payload.question_id,
             selected=payload.selected,
-            native_lang=payload.native_lang,
             idempotency_key=payload.idempotency_key,
         )
     except ReviewInputError as exc:
