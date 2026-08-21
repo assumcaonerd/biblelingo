@@ -1,23 +1,17 @@
 import { test, expect } from "@playwright/test";
+import { assertApiHealthy, uniqueEmail } from "./helpers";
 
 /**
- * Fluxo pedagógico ponta a ponta:
- * registrar → dashboard → ler → seed → praticar (se houver fila).
- *
- * Pré-requisito: API em http://127.0.0.1:8000 respondendo /health.
+ * Fluxo pedagógico ponta a ponta (seguro para fullyParallel):
+ * cada teste registra um usuário isolado e usa storage limpo.
  */
 
-test.beforeAll(async ({ request }) => {
-  const api = process.env.PLAYWRIGHT_API_URL ?? "http://127.0.0.1:8000";
-  const health = await request.get(`${api}/health`);
-  expect(
-    health.ok(),
-    `API indisponível em ${api}/health — suba com: uvicorn api.main:app --reload`
-  ).toBeTruthy();
+test.beforeEach(async ({ request }) => {
+  await assertApiHealthy(request);
 });
 
 test("registrar, ver dashboard e abrir leitor", async ({ page }) => {
-  const email = `e2e.${Date.now()}@example.com`;
+  const email = uniqueEmail("dash");
   const password = "secret123";
 
   await page.goto("/auth");
@@ -41,7 +35,7 @@ test("registrar, ver dashboard e abrir leitor", async ({ page }) => {
 });
 
 test("seed do capítulo e tela de prática", async ({ page }) => {
-  const email = `e2e.practice.${Date.now()}@example.com`;
+  const email = uniqueEmail("practice");
   const password = "secret123";
 
   await page.goto("/auth");
@@ -56,12 +50,12 @@ test("seed do capítulo e tela de prática", async ({ page }) => {
   await page.goto("/read");
   await expect(page.getByRole("heading", { name: /Genesis 1/i })).toBeVisible();
 
-  await page.getByRole("button", { name: /Praticar palavras deste capítulo/i }).click();
+  await page
+    .getByRole("button", { name: /Praticar palavras deste capítulo/i })
+    .click();
 
-  // Seed + redirect para /review
   await expect(page).toHaveURL(/\/review/, { timeout: 30_000 });
 
-  // Ou há perguntas, ou mensagem de fila vazia (ambos válidos após seed)
   const pratica = page.getByRole("heading", { name: /Prática/i });
   const vazia = page.getByText(/Nenhuma palavra para revisar agora/i);
   await expect(pratica.or(vazia)).toBeVisible({ timeout: 20_000 });
