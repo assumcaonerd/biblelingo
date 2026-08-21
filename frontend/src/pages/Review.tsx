@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, type DueQuestion, type ReviewResult } from "../api";
 import { useAuth } from "../auth";
@@ -16,6 +16,7 @@ export function Review() {
   const [busy, setBusy] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [done, setDone] = useState(false);
+  const idempotencyKeys = useRef<Record<string, string>>({});
 
   useEffect(() => {
     if (!token) return;
@@ -41,13 +42,17 @@ export function Review() {
     setBusy(true);
     setError("");
     try {
+      const questionKey = `${current.word}-${index}`;
+      const idempotencyKey =
+        idempotencyKeys.current[questionKey] ??
+        `web-${questionKey}-${crypto.randomUUID()}`;
+      idempotencyKeys.current[questionKey] = idempotencyKey;
+
       const res = await api.answerReview(token, {
         word: current.word,
         selected,
         native_lang: native,
-        idempotency_key: `web-${current.word}-${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2, 8)}`,
+        idempotency_key: idempotencyKey,
       });
       setResult(res);
       setScore((s) => ({

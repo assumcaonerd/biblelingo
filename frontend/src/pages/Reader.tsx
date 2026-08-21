@@ -48,7 +48,7 @@ export function Reader() {
             fontWeight: 600,
           }}
         >
-          Praticar palavras deste capítulo
+          Praticar palavras pendentes
         </Link>
         <Link to="/" className="muted">
           Voltar
