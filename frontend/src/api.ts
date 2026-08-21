@@ -57,6 +57,21 @@ export type ReviewResult = {
   review_streak?: number;
 };
 
+export type DueQuestion = {
+  word: string;
+  options: string[];
+  correct: string;
+  context: string;
+  origin: string;
+  next_review?: string | null;
+};
+
+export type DueReviews = {
+  count: number;
+  native_lang: string;
+  questions: DueQuestion[];
+};
+
 function authHeaders(token: string | null): HeadersInit {
   const headers: HeadersInit = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -110,6 +125,14 @@ export const api = {
     return fetch(`${API_BASE}/v1/chapters/${book}/${chapter}`).then((r) =>
       handle<Chapter>(r)
     );
+  },
+
+  dueReviews(token: string, limit = 5, native_lang?: string) {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (native_lang) params.set("native_lang", native_lang);
+    return fetch(`${API_BASE}/v1/reviews/due?${params}`, {
+      headers: authHeaders(token),
+    }).then((r) => handle<DueReviews>(r));
   },
 
   answerReview(token: string, payload: ReviewAnswer) {
