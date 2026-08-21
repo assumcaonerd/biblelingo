@@ -3,9 +3,10 @@ Ponto de entrada do BibleLingo.
 Fluxo atual:
 1. Carrega progresso (XP + streak)
 2. Carrega Gênesis 1
-3. Extrai palavras e adiciona ao vocabulário
-4. Roda um quiz com as palavras aprendidas
-5. Dá XP e salva tudo
+3. Oferece ouvir o texto
+4. Extrai palavras e adiciona ao vocabulário
+5. Roda um quiz (com opção de ouvir a pronúncia)
+6. Dá XP e salva tudo
 """
 
 from app.progress import Progress
@@ -33,10 +34,26 @@ def main():
     try:
         book = load_book("genesis")
         chapter_verses = get_chapter(book, 1)
+        chapter_text = format_chapter(chapter_verses)
 
         print("\n--- Gênesis 1 ---")
-        print(format_chapter(chapter_verses))
+        print(chapter_text)
         print("-----------------\n")
+
+        # Oferece ouvir o capítulo (ou os primeiros versículos)
+        try:
+            from app.audio import speak
+            hear = input("Quer ouvir o texto em inglês? (s/n): ").strip().lower()
+            if hear in ("s", "sim", "y", "yes"):
+                # Fala só os primeiros versículos para não ficar muito longo
+                first_verses = " ".join(
+                    get_verse_text(v) for v in chapter_verses[:4]
+                )
+                print("Reproduzindo...\n")
+                speak(first_verses)
+        except Exception as e:
+            print(f"(Áudio indisponível: {e})")
+            print("Instale com: pip install edge-tts\n")
 
         # 3. Extrai palavras e adiciona ao vocabulário
         total_new = 0
@@ -53,7 +70,7 @@ def main():
             )
             total_new += new_count
 
-        print(f"Palavras novas adicionadas: {total_new}")
+        print(f"\nPalavras novas adicionadas: {total_new}")
         print(f"Total no vocabulário: {vocab.total_words()}")
 
         sample_words = list(vocab.words.keys())[:8]
@@ -65,12 +82,10 @@ def main():
         questions = generate_quiz(quiz_words, dictionary, limit=5)
 
         if questions:
-            result = run_quiz(questions, vocabulary=vocab)
-
-            # XP extra pelos acertos do quiz
+            result = run_quiz(questions, vocabulary=vocab, enable_audio=True)
             quiz_xp = result["correct"] * 10
         else:
-            print("\nAinda não há palavras suficientes com tradução no dicionário para o quiz.")
+            print("\nAinda não há palavras suficientes no dicionário para o quiz.")
             quiz_xp = 0
             result = {"correct": 0, "total": 0}
 
