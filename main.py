@@ -97,7 +97,8 @@ def main():
                 words,
                 chapter=1,
                 verse_number=verse_num,
-                book="Genesis"
+                book="Genesis",
+                verse_text=text,
             )
             total_new += new_count
 
@@ -115,6 +116,8 @@ def main():
             native_lang=native_lang,
             limit=5
         )
+        for question in questions:
+            question["context"] = vocab.words.get(question["word"], {}).get("context", "")
 
         if questions:
             result = run_quiz(
@@ -125,9 +128,9 @@ def main():
             )
             quiz_xp = result["correct"] * 10
         else:
-            print("\nAinda não há palavras suficientes no dicionário para o quiz.")
+            print(f"\n{t(ui['quiz_unavailable'], native_lang)}")
             quiz_xp = 0
-            result = {"correct": 0, "total": 0}
+            result = {"correct": 0, "incorrect": 0, "total": 0}
 
         progress.record_activity()
 
@@ -153,6 +156,12 @@ def main():
     print(f"{ui['xp']}: {progress.xp}")
     print(f"{t(ui['streak'], native_lang)}: {progress.current_streak} {t(ui['days'], native_lang)}")
     print(f"{t(ui['words_in_vocab'], native_lang)}: {vocab.total_words()}")
+    level_progress = progress.level_progress()
+    print(
+        f"{t(ui['level_progress'], native_lang)}: "
+        f"{level_progress['current']}/{level_progress['next_level']} XP "
+        f"({level_progress['percent']}%)"
+    )
 
 
 if __name__ == "__main__":
