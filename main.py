@@ -1,28 +1,44 @@
 """
 Ponto de entrada do BibleLingo.
-Por enquanto só testa o sistema de XP e Streak.
+Testa o carregamento de Gênesis + sistema de XP e Streak.
 """
 
 from app.progress import Progress
+from app.bible_loader import load_book, get_chapter, format_chapter
 
 
 def main():
     print("=== BibleLingo ===")
     print("Aprendendo inglês com a Bíblia\n")
 
+    # 1. Carrega o progresso
     progress = Progress()
     progress.load()
 
-    print("\nRegistrando atividade de hoje...")
-    progress.record_activity()
+    # 2. Carrega Gênesis (usa o sample se o arquivo completo não existir)
+    print("Carregando Gênesis...")
+    try:
+        book = load_book("genesis")
+        chapter = get_chapter(book, 1)
+        text = format_chapter(chapter)
 
-    # Simula ganhar XP por ler um capítulo
-    bonus = progress.get_streak_bonus()
-    xp_base = 30
-    xp_final = int(xp_base * bonus)
+        print("\n--- Gênesis 1 ---")
+        print(text)
+        print("-----------------\n")
 
-    print(f"\nBônus de streak atual: x{bonus}")
-    progress.add_xp(xp_final, "leitura de capítulo (simulado)")
+        # Registra a atividade e dá XP pela leitura
+        progress.record_activity()
+
+        bonus = progress.get_streak_bonus()
+        xp_base = 30
+        xp_final = int(xp_base * bonus)
+
+        print(f"Bônus de streak: x{bonus}")
+        progress.add_xp(xp_final, "leitura de Gênesis 1")
+
+    except FileNotFoundError as e:
+        print(e)
+        print("\nColoque o arquivo data/genesis.json ou use o sample que já está no repositório.")
 
     progress.save()
 
