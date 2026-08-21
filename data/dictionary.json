@@ -1,51 +1,198 @@
 {
-  "beginning": "começo / princípio",
-  "god": "Deus",
-  "created": "criou",
-  "heavens": "céus",
-  "earth": "terra",
-  "formless": "sem forma",
-  "empty": "vazio",
-  "darkness": "escuridão",
-  "surface": "superfície",
-  "deep": "abismo",
-  "spirit": "Espírito",
-  "hovering": "pairava",
-  "waters": "águas",
-  "said": "disse",
-  "light": "luz",
-  "saw": "viu",
-  "good": "bom",
-  "divided": "separou",
-  "called": "chamou",
-  "day": "dia",
-  "night": "noite",
-  "evening": "tarde",
-  "morning": "manhã",
-  "first": "primeiro",
-  "expanse": "firmamento / expansão",
-  "middle": "meio",
-  "divide": "dividir",
-  "made": "fez",
-  "under": "debaixo",
-  "above": "acima",
-  "sky": "céu",
-  "second": "segundo",
-  "gathered": "reunidas",
-  "together": "juntas",
-  "place": "lugar",
-  "dry": "seco",
-  "land": "terra firme",
-  "appear": "apareça",
-  "seas": "mares",
-  "yield": "produza",
-  "grass": "erva",
-  "herbs": "ervas",
-  "yielding": "que produzem",
-  "seeds": "sementes",
-  "fruit": "fruto",
-  "trees": "árvores",
-  "bearing": "que dão",
-  "kind": "espécie",
-  "seed": "semente"
+  "beginning": {
+    "pt": "começo / princípio",
+    "es": "principio / comienzo"
+  },
+  "god": {
+    "pt": "Deus",
+    "es": "Dios"
+  },
+  "created": {
+    "pt": "criou",
+    "es": "creó"
+  },
+  "heavens": {
+    "pt": "céus",
+    "es": "cielos"
+  },
+  "earth": {
+    "pt": "terra",
+    "es": "tierra"
+  },
+  "formless": {
+    "pt": "sem forma",
+    "es": "sin forma"
+  },
+  "empty": {
+    "pt": "vazio",
+    "es": "vacío"
+  },
+  "darkness": {
+    "pt": "escuridão",
+    "es": "oscuridad"
+  },
+  "surface": {
+    "pt": "superfície",
+    "es": "superficie"
+  },
+  "deep": {
+    "pt": "abismo",
+    "es": "abismo"
+  },
+  "spirit": {
+    "pt": "Espírito",
+    "es": "Espíritu"
+  },
+  "hovering": {
+    "pt": "pairava",
+    "es": "se movía / se cernía"
+  },
+  "waters": {
+    "pt": "águas",
+    "es": "aguas"
+  },
+  "said": {
+    "pt": "disse",
+    "es": "dijo"
+  },
+  "light": {
+    "pt": "luz",
+    "es": "luz"
+  },
+  "saw": {
+    "pt": "viu",
+    "es": "vio"
+  },
+  "good": {
+    "pt": "bom",
+    "es": "bueno"
+  },
+  "divided": {
+    "pt": "separou",
+    "es": "separó"
+  },
+  "called": {
+    "pt": "chamou",
+    "es": "llamó"
+  },
+  "day": {
+    "pt": "dia",
+    "es": "día"
+  },
+  "night": {
+    "pt": "noite",
+    "es": "noche"
+  },
+  "evening": {
+    "pt": "tarde",
+    "es": "tarde"
+  },
+  "morning": {
+    "pt": "manhã",
+    "es": "mañana"
+  },
+  "first": {
+    "pt": "primeiro",
+    "es": "primero"
+  },
+  "expanse": {
+    "pt": "firmamento / expansão",
+    "es": "expansión / firmamento"
+  },
+  "middle": {
+    "pt": "meio",
+    "es": "medio"
+  },
+  "divide": {
+    "pt": "dividir",
+    "es": "dividir"
+  },
+  "made": {
+    "pt": "fez",
+    "es": "hizo"
+  },
+  "under": {
+    "pt": "debaixo",
+    "es": "debajo"
+  },
+  "above": {
+    "pt": "acima",
+    "es": "arriba"
+  },
+  "sky": {
+    "pt": "céu",
+    "es": "cielo"
+  },
+  "second": {
+    "pt": "segundo",
+    "es": "segundo"
+  },
+  "gathered": {
+    "pt": "reunidas",
+    "es": "reunidas"
+  },
+  "together": {
+    "pt": "juntas",
+    "es": "juntas"
+  },
+  "place": {
+    "pt": "lugar",
+    "es": "lugar"
+  },
+  "dry": {
+    "pt": "seco",
+    "es": "seco"
+  },
+  "land": {
+    "pt": "terra firme",
+    "es": "tierra seca"
+  },
+  "appear": {
+    "pt": "apareça",
+    "es": "aparezca"
+  },
+  "seas": {
+    "pt": "mares",
+    "es": "mares"
+  },
+  "yield": {
+    "pt": "produza",
+    "es": "produzca"
+  },
+  "grass": {
+    "pt": "erva",
+    "es": "hierba"
+  },
+  "herbs": {
+    "pt": "ervas",
+    "es": "hierbas"
+  },
+  "yielding": {
+    "pt": "que produzem",
+    "es": "que producen"
+  },
+  "seeds": {
+    "pt": "sementes",
+    "es": "semillas"
+  },
+  "fruit": {
+    "pt": "fruto",
+    "es": "fruto"
+  },
+  "trees": {
+    "pt": "árvores",
+    "es": "árboles"
+  },
+  "bearing": {
+    "pt": "que dão",
+    "es": "que dan"
+  },
+  "kind": {
+    "pt": "espécie",
+    "es": "especie"
+  },
+  "seed": {
+    "pt": "semente",
+    "es": "semilla"
+  }
 }
