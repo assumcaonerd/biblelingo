@@ -13,8 +13,13 @@ Instalação:
 
 import asyncio
 import hashlib
-import edge_tts
+import shutil
 from pathlib import Path
+
+try:
+    import edge_tts
+except ImportError:  # áudio é opcional; o restante do app continua funcional
+    edge_tts = None
 from typing import Optional
 import subprocess
 import sys
@@ -38,6 +43,8 @@ def _cache_key(text: str, voice: str, rate: str) -> str:
 
 async def _generate_audio(text: str, voice: str = DEFAULT_VOICE, rate: str = DEFAULT_RATE) -> bytes:
     """Gera o áudio em memória usando edge-tts."""
+    if edge_tts is None:
+        raise RuntimeError("edge-tts não está instalado; execute pip install -r requirements.txt")
     communicate = edge_tts.Communicate(text, voice, rate=rate)
     audio_data = b""
     async for chunk in communicate.stream():
@@ -77,6 +84,8 @@ def _play_file(path: Path):
             ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet"],
             ["aplay"],
         ):
+            if shutil.which(player[0]) is None:
+                continue
             try:
                 subprocess.run(player + [path_str], check=True)
                 return
