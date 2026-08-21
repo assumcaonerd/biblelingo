@@ -72,6 +72,17 @@ export type DueReviews = {
   questions: DueQuestion[];
 };
 
+export type SeedResult = {
+  book: string;
+  chapter: number;
+  words_seen: number;
+  words_new: number;
+  words_existing: number;
+  words_with_translation: number;
+  due_count: number;
+  sample_new: string[];
+};
+
 export class ApiError extends Error {
   status: number;
 
@@ -137,6 +148,14 @@ export const api = {
     return fetch(`${API_BASE}/v1/chapters/${book}/${chapter}`).then((r) =>
       handle<Chapter>(r)
     );
+  },
+
+  seedChapter(token: string, book: string, chapter: number) {
+    return fetch(`${API_BASE}/v1/vocabulary/seed`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ book, chapter }),
+    }).then((r) => handle<SeedResult>(r));
   },
 
   dueReviews(token: string, limit = 5, native_lang?: string) {
