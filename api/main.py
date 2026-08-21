@@ -16,10 +16,9 @@ app = FastAPI(
     title="BibleLingo API",
     description=(
         "API do BibleLingo – aprender inglês lendo e ouvindo a Bíblia. "
-        "O domínio de regras (XP, streak, vocabulário, quiz) vive em app/domain/ "
-        "e é compartilhado com o CLI."
+        "Autenticação por JWT. O domínio de regras vive em app/domain/."
     ),
-    version="0.2.0",
+    version="0.3.0",
 )
 
 app.include_router(api_router)
@@ -35,9 +34,15 @@ def startup() -> None:
 def root():
     return {
         "service": "biblelingo",
+        "version": "0.3.0",
         "docs": "/docs",
         "health": "/health",
-        "progress": "/v1/progress",
-        "chapters": "/v1/chapters",
-        "review_answer": "/v1/reviews/answer",
+        "auth": {
+            "register": "POST /v1/auth/register",
+            "login": "POST /v1/auth/login",
+            "me": "GET /v1/me",
+        },
+        "progress": "GET /v1/progress",
+        "chapters": "GET /v1/chapters",
+        "review_answer": "POST /v1/reviews/answer",
     }
