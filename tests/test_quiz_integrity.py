@@ -163,6 +163,60 @@ class QuizIntegrityTests(unittest.TestCase):
         books = ContentRepository().list_available_books()
         self.assertNotIn("dictionary_psalms23", books)
 
+    def test_idempotency_conflict_different_selected(self) -> None:
+        auth = self._register("sel-conflict@example.com")
+        headers = self._headers(auth["access_token"])
+        session = self._seed_and_session(headers, limit=1)
+        q = session["questions"][0]
+        if len(q["options"]) < 2:
+            self.skipTest("precisa de 2 opções")
+        key = "same-qid-diff-selected"
+        first = self.client.post(
+            "/v1/reviews/answer",
+            json={
+                "question_id": q["question_id"],
+                "selected": q["options"][0],
+                "idempotency_key": key,
+            },
+            headers=headers,
+        )
+        self.assertEqual(first.status_code, 200, first.text)
+        conflict = self.client.post(
+            "/v1/reviews/answer",
+            json={
+                "question_id": q["question_id"],
+                "selected": q["options"][1],
+                "idempotency_key": key,
+            },
+            headers=headers,
+        )
+        self.assertEqual(conflict.status_code, 409, conflict.text)
+
+    def test_session_does_not_reuse_across_native_lang(self) -> None:
+        auth = self._register("lang-reuse@example.com")
+        headers = self._headers(auth["access_token"])
+        self.client.post(
+            "/v1/vocabulary/seed",
+            json={"book": "genesis", "chapter": 1},
+            headers=headers,
+        )
+        pt = self.client.post(
+            "/v1/study-sessions",
+            json={"limit": 1, "native_lang": "pt"},
+            headers=headers,
+        ).json()
+        es = self.client.post(
+            "/v1/study-sessions",
+            json={"limit": 1, "native_lang": "es"},
+            headers=headers,
+        ).json()
+        if not pt["questions"] or not es["questions"]:
+            self.skipTest("sem perguntas para pt/es")
+        self.assertNotEqual(
+            pt["questions"][0]["question_id"],
+            es["questions"][0]["question_id"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
