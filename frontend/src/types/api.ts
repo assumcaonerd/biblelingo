@@ -1,39 +1,21 @@
 /**
  * Contratos HTTP alinhados aos schemas Pydantic em api/schemas/.
- *
- * Datas chegam como string ISO (JSON); no backend são date/datetime.
- * Nomes de campos seguem o JSON serializado pelo FastAPI (snake_case).
- *
- * Fonte de verdade no servidor:
- *   api/schemas/auth.py
- *   api/schemas/progress.py
- *   api/schemas/dashboard.py
- *   api/schemas/review.py
- *   api/schemas/vocabulary.py
- *   api/schemas/content.py
+ * Datas JSON → string ISO. snake_case igual ao payload da API.
  */
 
-/** Literal["pt", "es", "en", "ar", "he"] */
 export type NativeLanguage = "pt" | "es" | "en" | "ar" | "he";
 
-// ---------------------------------------------------------------------------
-// Auth — api/schemas/auth.py
-// ---------------------------------------------------------------------------
-
-/** RegisterRequest */
 export type RegisterRequest = {
   email: string;
   password: string;
   native_language?: NativeLanguage;
 };
 
-/** LoginRequest */
 export type LoginRequest = {
   email: string;
   password: string;
 };
 
-/** UserOut */
 export type User = {
   id: string;
   email: string;
@@ -41,18 +23,12 @@ export type User = {
   created_at?: string | null;
 };
 
-/** TokenResponse */
 export type TokenResponse = {
   access_token: string;
   token_type: string;
   user: User;
 };
 
-// ---------------------------------------------------------------------------
-// Progress — api/schemas/progress.py
-// ---------------------------------------------------------------------------
-
-/** LevelProgress */
 export type LevelProgress = {
   current: number;
   level_start: number;
@@ -60,7 +36,6 @@ export type LevelProgress = {
   percent: number;
 };
 
-/** ProgressResponse */
 export type Progress = {
   xp: number;
   level: number;
@@ -71,11 +46,6 @@ export type Progress = {
   level_progress: LevelProgress;
 };
 
-// ---------------------------------------------------------------------------
-// Dashboard — api/schemas/dashboard.py
-// ---------------------------------------------------------------------------
-
-/** VocabularyStats */
 export type VocabularyStats = {
   total_words: number;
   due_words: number;
@@ -87,7 +57,6 @@ export type VocabularyStats = {
   accuracy_rate: number;
 };
 
-/** RecentActivityItem */
 export type RecentActivityItem = {
   word: string;
   is_correct: boolean;
@@ -95,7 +64,6 @@ export type RecentActivityItem = {
   created_at: string;
 };
 
-/** DashboardResponse */
 export type Dashboard = {
   progress: Progress;
   vocabulary: VocabularyStats;
@@ -106,37 +74,29 @@ export type Dashboard = {
   last_activity_date: string | null;
 };
 
-// ---------------------------------------------------------------------------
-// Content — api/schemas/content.py
-// ---------------------------------------------------------------------------
-
-/** VerseOut */
 export type Verse = {
   verse_number: number;
   text: string;
 };
 
-/** ChapterOut */
 export type Chapter = {
   book: string;
   chapter: number;
   verses: Verse[];
+  label?: string | null;
+  complete?: boolean;
+  verse_range?: string | null;
 };
 
-// ---------------------------------------------------------------------------
-// Review — api/schemas/review.py
-// ---------------------------------------------------------------------------
-
-/** ReviewAnswerRequest */
+/** Resposta a pergunta emitida pelo servidor (sem word/native_lang). */
 export type ReviewAnswerRequest = {
-  word: string;
+  question_id: string;
   selected: string;
-  native_lang: string;
   idempotency_key: string;
 };
 
-/** ReviewAnswerResponse — resposta completa do POST /v1/reviews/answer */
 export type ReviewAnswerResponse = {
+  question_id: string;
   idempotency_key: string;
   word: string;
   selected: string;
@@ -149,10 +109,6 @@ export type ReviewAnswerResponse = {
   progress: Progress;
 };
 
-/**
- * Subconjunto usado pela UI de quiz (campos opcionais para compat).
- * Preferir ReviewAnswerResponse quando o progresso embutido for necessário.
- */
 export type ReviewResult = {
   is_correct: boolean;
   correct_answer: string;
@@ -161,37 +117,32 @@ export type ReviewResult = {
   next_review?: string;
   review_streak?: number;
   progress?: Progress;
+  question_id?: string;
 };
 
-/** DueQuestion */
+/** Pergunta pública — nunca inclui `correct`. */
 export type DueQuestion = {
+  question_id: string;
   word: string;
   options: string[];
-  correct: string;
   context: string;
   origin: string;
   next_review?: string | null;
 };
 
-/** DueReviewsResponse */
 export type DueReviews = {
   count: number;
   native_lang: string;
   questions: DueQuestion[];
+  mode?: string;
 };
 
-// ---------------------------------------------------------------------------
-// Vocabulary seed — api/schemas/vocabulary.py
-// ---------------------------------------------------------------------------
-
-/** SeedChapterRequest */
 export type SeedChapterRequest = {
   book: string;
   chapter: number;
   words?: string[] | null;
 };
 
-/** SeedChapterResponse */
 export type SeedChapterResponse = {
   book: string;
   chapter: number;
@@ -203,6 +154,5 @@ export type SeedChapterResponse = {
   sample_new: string[];
 };
 
-/** Alias legado usado nas páginas */
 export type SeedResult = SeedChapterResponse;
 export type ReviewAnswer = ReviewAnswerRequest;
