@@ -1,0 +1,35 @@
+[project]
+name = "biblelingo"
+version = "0.4.0"
+description = "Aprenda inglês lendo e praticando a World English Bible"
+requires-python = ">=3.12"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [
+  ".venv",
+  "venv",
+  "frontend",
+  "data",
+  "**/__pycache__",
+]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "I",   # isort
+  "B",   # bugbear
+  "UP",  # pyupgrade
+]
+ignore = [
+  "E501",  # line length — format cuida do restante
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
