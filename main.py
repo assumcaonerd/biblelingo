@@ -3,8 +3,8 @@ Ponto de entrada do BibleLingo.
 Fluxo atual:
 1. Carrega progresso (XP + streak)
 2. Carrega Gênesis 1
-3. Extrai palavras novas com o parser
-4. Adiciona ao vocabulário
+3. Extrai palavras e adiciona ao vocabulário
+4. Roda um quiz com as palavras aprendidas
 5. Dá XP e salva tudo
 """
 
@@ -12,6 +12,7 @@ from app.progress import Progress
 from app.bible_loader import load_book, get_chapter, format_chapter, get_verse_text
 from app.parser import extract_words
 from app.vocabulary import Vocabulary
+from app.quiz import load_dictionary, generate_quiz, run_quiz
 
 
 def main():
@@ -25,6 +26,8 @@ def main():
     vocab = Vocabulary()
     vocab.load()
 
+    dictionary = load_dictionary()
+
     # 2. Carrega Gênesis
     print("Carregando Gênesis 1...")
     try:
@@ -35,7 +38,7 @@ def main():
         print(format_chapter(chapter_verses))
         print("-----------------\n")
 
-        # 3. Extrai palavras de cada versículo e adiciona ao vocabulário
+        # 3. Extrai palavras e adiciona ao vocabulário
         total_new = 0
         for verse in chapter_verses:
             text = get_verse_text(verse)
@@ -50,25 +53,41 @@ def main():
             )
             total_new += new_count
 
-        print(f"Palavras novas adicionadas ao vocabulário: {total_new}")
-        print(f"Total de palavras no vocabulário: {vocab.total_words()}")
+        print(f"Palavras novas adicionadas: {total_new}")
+        print(f"Total no vocabulário: {vocab.total_words()}")
 
-        # Mostra algumas palavras aprendidas
         sample_words = list(vocab.words.keys())[:8]
         if sample_words:
             print(f"Exemplos: {', '.join(sample_words)}")
 
-        # 4. Registra atividade + XP
+        # 4. Gera e roda o quiz
+        quiz_words = vocab.get_words_for_quiz(limit=5)
+        questions = generate_quiz(quiz_words, dictionary, limit=5)
+
+        if questions:
+            result = run_quiz(questions, vocabulary=vocab)
+
+            # XP extra pelos acertos do quiz
+            quiz_xp = result["correct"] * 10
+        else:
+            print("\nAinda não há palavras suficientes com tradução no dicionário para o quiz.")
+            quiz_xp = 0
+            result = {"correct": 0, "total": 0}
+
+        # 5. Registra atividade + XP total
         progress.record_activity()
 
         bonus = progress.get_streak_bonus()
-        xp_base = 30 + (total_new * 5)  # 30 pela leitura + 5 por palavra nova
+        xp_base = 30 + (total_new * 5) + quiz_xp
         xp_final = int(xp_base * bonus)
 
         print(f"\nBônus de streak: x{bonus}")
-        progress.add_xp(xp_final, f"leitura de Gênesis 1 + {total_new} palavras novas")
+        progress.add_xp(
+            xp_final,
+            f"leitura + {total_new} palavras + {result['correct']} acertos no quiz"
+        )
 
-        # 5. Salva tudo
+        # 6. Salva tudo
         vocab.save()
         progress.save()
 
