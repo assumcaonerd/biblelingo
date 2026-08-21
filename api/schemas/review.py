@@ -1,4 +1,4 @@
-"""Contratos HTTP para sessões de revisão."""
+"""Contratos HTTP para sessões de revisão (sem vazar a resposta)."""
 
 from __future__ import annotations
 
@@ -11,13 +11,15 @@ from .progress import ProgressResponse
 
 
 class ReviewAnswerRequest(BaseModel):
-    word: str = Field(min_length=1, max_length=128)
+    """Resposta a uma pergunta previamente emitida pelo servidor."""
+
+    question_id: str = Field(min_length=8, max_length=64)
     selected: str = Field(min_length=1, max_length=512)
-    native_lang: str = Field(default="pt", min_length=2, max_length=8)
     idempotency_key: str = Field(min_length=1, max_length=128)
 
 
 class ReviewAnswerResponse(BaseModel):
+    question_id: str
     idempotency_key: str
     word: str
     selected: str
@@ -31,9 +33,11 @@ class ReviewAnswerResponse(BaseModel):
 
 
 class DueQuestion(BaseModel):
+    """Pergunta pública: nunca inclui a alternativa correta."""
+
+    question_id: str
     word: str
     options: List[str]
-    correct: str
     context: str = ""
     origin: str = ""
     next_review: Optional[date] = None
@@ -43,3 +47,7 @@ class DueReviewsResponse(BaseModel):
     count: int
     native_lang: str
     questions: List[DueQuestion]
+    mode: str = Field(
+        default="due",
+        description="Sempre 'due' — apenas palavras vencidas; sem seed implícito",
+    )
