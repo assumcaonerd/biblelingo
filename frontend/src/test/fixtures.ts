@@ -1,7 +1,3 @@
-/**
- * Payloads de mock tipados pelos contratos Pydantic (src/types/api.ts).
- */
-
 import type {
   Chapter,
   Dashboard,
@@ -9,6 +5,7 @@ import type {
   Progress,
   ReviewAnswerResponse,
   SeedChapterResponse,
+  StudySessionResponse,
   TokenResponse,
   User,
 } from "../types/api";
@@ -80,7 +77,7 @@ export const mockChapter: Chapter = {
     },
     {
       verse_number: 3,
-      text: "God said, \"Let there be light,\" and there was light.",
+      text: 'God said, "Let there be light," and there was light.',
     },
   ],
 };
@@ -89,12 +86,32 @@ export const mockDueReviews: DueReviews = {
   count: 2,
   native_lang: "pt",
   mode: "due",
+  words: [
+    {
+      word: "light",
+      origin: "Genesis 1:3",
+      context: 'God said, "Let there be light," and there was light.',
+      next_review: "2026-08-21",
+    },
+    {
+      word: "created",
+      origin: "Genesis 1:1",
+      context: "In the beginning, God created the heavens and the earth.",
+      next_review: "2026-08-21",
+    },
+  ],
+};
+
+export const mockStudySession: StudySessionResponse = {
+  count: 2,
+  native_lang: "pt",
+  mode: "session",
   questions: [
     {
       question_id: "q_test_light_001",
       word: "light",
       options: ["luz", "escuridão", "água", "terra"],
-      context: "God said, \"Let there be light,\" and there was light.",
+      context: 'God said, "Let there be light," and there was light.',
       origin: "Genesis 1:3",
       next_review: "2026-08-21",
     },
@@ -135,15 +152,6 @@ export const mockReviewCorrect: ReviewAnswerResponse = {
     ...mockProgress,
     xp: 50,
   },
-};
-
-export const mockReviewWrong: ReviewAnswerResponse = {
-  ...mockReviewCorrect,
-  selected: "água",
-  is_correct: false,
-  xp_awarded: 0,
-  review_streak: 0,
-  progress: mockProgress,
 };
 
 export function jsonResponse(body: unknown, status = 200): Response {
