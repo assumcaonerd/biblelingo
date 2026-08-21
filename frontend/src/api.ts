@@ -30,6 +30,34 @@ export type Progress = {
   };
 };
 
+export type VocabularyStats = {
+  total_words: number;
+  due_words: number;
+  reviewed_words: number;
+  never_reviewed: number;
+  total_reviews: number;
+  correct_reviews: number;
+  incorrect_reviews: number;
+  accuracy_rate: number;
+};
+
+export type RecentActivityItem = {
+  word: string;
+  is_correct: boolean;
+  xp_awarded: number;
+  created_at: string;
+};
+
+export type Dashboard = {
+  progress: Progress;
+  vocabulary: VocabularyStats;
+  recent_activity: RecentActivityItem[];
+  daily_goal: number;
+  reviews_today: number;
+  goal_met: boolean;
+  last_activity_date: string | null;
+};
+
 export type Verse = {
   verse_number: number;
   text: string;
@@ -142,6 +170,12 @@ export const api = {
     return fetch(`${API_BASE}/v1/progress`, {
       headers: authHeaders(token),
     }).then((r) => handle<Progress>(r));
+  },
+
+  dashboard(token: string, dailyGoal = 5) {
+    return fetch(`${API_BASE}/v1/dashboard?daily_goal=${dailyGoal}`, {
+      headers: authHeaders(token),
+    }).then((r) => handle<Dashboard>(r));
   },
 
   chapter(book: string, chapter: number) {
