@@ -2,6 +2,8 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.languages import SUPPORTED_NATIVE_LANGUAGES
+
 from api.dependencies import get_current_user, get_user_id
 from api.repositories.review_repo import ReviewInputError, ReviewRepository
 from api.schemas.review import (
@@ -21,6 +23,12 @@ def list_due_reviews(
 ):
     """Retorna perguntas de palavras vencidas (ou seed inicial)."""
     lang = (native_lang or user.get("native_language") or "pt").strip().lower()
+    if lang not in SUPPORTED_NATIVE_LANGUAGES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported native language: {lang}",
+        )
+
     result = ReviewRepository().list_due(
         user_id=user["id"],
         native_lang=lang,
