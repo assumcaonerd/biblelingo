@@ -54,7 +54,11 @@ def main():
 
     print(f"\n=== {ui['app_title']} ===")
     print(t(ui["subtitle"], native_lang))
-    print(f"{t('Idioma nativo', native_lang)}: {prepare_rtl(get_native_language_name(native_lang), native_lang) if is_rtl(native_lang) else get_native_language_name(native_lang)}\n")
+    native_name = get_native_language_name(native_lang)
+    print(
+        f"{t('Idioma nativo', native_lang)}: "
+        f"{prepare_rtl(native_name, native_lang) if is_rtl(native_lang) else native_name}\n"
+    )
 
     progress = Progress()
     progress.load()
@@ -83,8 +87,8 @@ def main():
                 )
                 print(f"{t(ui['playing'], native_lang)}\n")
                 speak(first_verses)
-        except Exception as e:
-            print(f"({t(ui['audio_unavailable'], native_lang)}: {e})")
+        except Exception as exc:
+            print(f"({t(ui['audio_unavailable'], native_lang)}: {exc})")
             print(f"{ui['install_audio']}\n")
 
         total_new = 0
@@ -110,14 +114,17 @@ def main():
             print(f"{t(ui['examples'], native_lang)}: {', '.join(sample_words)}")
 
         quiz_words = vocab.get_words_for_quiz(limit=5)
+        contexts = {
+            word: vocab.words.get(word, {}).get("context", "")
+            for word in quiz_words
+        }
         questions = generate_quiz(
             quiz_words,
             dictionary,
             native_lang=native_lang,
-            limit=5
+            limit=5,
+            contexts=contexts,
         )
-        for question in questions:
-            question["context"] = vocab.words.get(question["word"], {}).get("context", "")
 
         if questions:
             result = run_quiz(
@@ -141,17 +148,17 @@ def main():
         print(f"\n{t(ui['streak_bonus'], native_lang)}: x{bonus}")
         progress.add_xp(
             xp_final,
-            f"leitura + {total_new} palavras + {result['correct']} acertos"
+            f"leitura + {total_new} palavras + {result['correct']} acertos",
         )
 
         vocab.save()
         progress.save()
 
-    except FileNotFoundError as e:
-        print(e)
+    except FileNotFoundError as exc:
+        print(exc)
         print("\nO sample data/genesis_sample.json já está no repositório.")
 
-    print(f"\n--- Estado atual ---")
+    print("\n--- Estado atual ---")
     print(f"{t(ui['level'], native_lang)}: {progress.level}")
     print(f"{ui['xp']}: {progress.xp}")
     print(f"{t(ui['streak'], native_lang)}: {progress.current_streak} {t(ui['days'], native_lang)}")
