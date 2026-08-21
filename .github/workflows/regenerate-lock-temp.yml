@@ -1,11 +1,9 @@
 name: Regenerate package lock temporary
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/phase1-quiz-integrity
-    paths:
-      - .github/workflows/regenerate-lock-temp.yml
+      - main
   workflow_dispatch:
 
 permissions:
