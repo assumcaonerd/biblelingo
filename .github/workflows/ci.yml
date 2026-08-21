@@ -67,10 +67,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
-          npm install --no-save \
-            eslint @eslint/js typescript-eslint eslint-plugin-react-hooks eslint-plugin-react-refresh globals \
-            vitest jsdom @testing-library/react @testing-library/jest-dom @testing-library/user-event
+          if [ -f package-lock.json ]; then
+            npm ci || npm install
+          else
+            npm install
+          fi
 
       - name: ESLint
         run: npm run lint
@@ -110,8 +111,11 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
-          npm install --no-save @playwright/test
+          if [ -f package-lock.json ]; then
+            npm ci || npm install
+          else
+            npm install
+          fi
 
       - name: Install Playwright browser
         working-directory: frontend
