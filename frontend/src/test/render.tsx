@@ -2,7 +2,7 @@ import { type ReactElement, type ReactNode } from "react";
 import { render, type RenderOptions } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { createContext, useContext, useMemo } from "react";
-import type { User } from "../types/api";
+import type { NativeLanguage, User } from "../types/api";
 import { mockUser } from "./fixtures";
 
 type AuthState = {
@@ -11,7 +11,11 @@ type AuthState = {
   ready: boolean;
   sessionError: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, native?: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    native?: NativeLanguage
+  ) => Promise<void>;
   logout: () => void;
 };
 
