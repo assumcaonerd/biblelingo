@@ -1,6 +1,5 @@
 /**
  * Payloads de mock tipados pelos contratos Pydantic (src/types/api.ts).
- * Use em testes de componentes e do cliente HTTP.
  */
 
 import type {
@@ -71,6 +70,9 @@ export const mockDashboard: Dashboard = {
 export const mockChapter: Chapter = {
   book: "genesis",
   chapter: 1,
+  label: "Gênesis 1:1-10 (amostra)",
+  complete: false,
+  verse_range: "1-10",
   verses: [
     {
       verse_number: 1,
@@ -86,19 +88,20 @@ export const mockChapter: Chapter = {
 export const mockDueReviews: DueReviews = {
   count: 2,
   native_lang: "pt",
+  mode: "due",
   questions: [
     {
+      question_id: "q_test_light_001",
       word: "light",
       options: ["luz", "escuridão", "água", "terra"],
-      correct: "luz",
       context: "God said, \"Let there be light,\" and there was light.",
       origin: "Genesis 1:3",
       next_review: "2026-08-21",
     },
     {
+      question_id: "q_test_created_002",
       word: "created",
       options: ["criou", "destruiu", "viu", "disse"],
-      correct: "criou",
       context: "In the beginning, God created the heavens and the earth.",
       origin: "Genesis 1:1",
       next_review: "2026-08-21",
@@ -118,6 +121,7 @@ export const mockSeedResult: SeedChapterResponse = {
 };
 
 export const mockReviewCorrect: ReviewAnswerResponse = {
+  question_id: "q_test_light_001",
   idempotency_key: "test-key-1",
   word: "light",
   selected: "luz",
@@ -142,7 +146,6 @@ export const mockReviewWrong: ReviewAnswerResponse = {
   progress: mockProgress,
 };
 
-/** Resposta HTTP JSON bem-sucedida para mock de fetch. */
 export function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
