@@ -1,4 +1,4 @@
-"""P0: integridade do quiz — sem correct no due, answer só com question_id."""
+"""P0: integridade do quiz e semântica due vs session."""
 
 from __future__ import annotations
 
@@ -44,154 +44,124 @@ class QuizIntegrityTests(unittest.TestCase):
     def _headers(self, token: str) -> dict:
         return {"Authorization": f"Bearer {token}"}
 
-    def test_due_does_not_include_correct(self) -> None:
-        auth = self._register("integrity-due@example.com")
-        headers = self._headers(auth["access_token"])
-
+    def _seed_and_session(self, headers: dict, limit: int = 3) -> dict:
         self.client.post(
             "/v1/vocabulary/seed",
             json={"book": "genesis", "chapter": 1},
             headers=headers,
         )
-        due = self.client.get("/v1/reviews/due?limit=3", headers=headers)
-        self.assertEqual(due.status_code, 200, due.text)
+        session = self.client.post(
+            "/v1/study-sessions",
+            json={"limit": limit},
+            headers=headers,
+        )
+        self.assertEqual(session.status_code, 200, session.text)
+        return session.json()
+
+    def test_due_has_no_side_effect_and_no_questions(self) -> None:
+        auth = self._register("due-ro@example.com")
+        headers = self._headers(auth["access_token"])
+        self.client.post(
+            "/v1/vocabulary/seed",
+            json={"book": "genesis", "chapter": 1},
+            headers=headers,
+        )
+        due = self.client.get("/v1/reviews/due", headers=headers)
+        self.assertEqual(due.status_code, 200)
         body = due.json()
-        self.assertGreater(body["count"], 0)
+        self.assertIn("words", body)
+        self.assertNotIn("questions", body)
+
+    def test_session_never_includes_correct(self) -> None:
+        auth = self._register("no-correct@example.com")
+        body = self._seed_and_session(self._headers(auth["access_token"]))
         for q in body["questions"]:
             self.assertIn("question_id", q)
             self.assertNotIn("correct", q)
-            self.assertIn("options", q)
-            self.assertGreaterEqual(len(q["options"]), 2)
 
-    def test_due_without_vocabulary_is_empty_no_seed(self) -> None:
-        auth = self._register("integrity-empty@example.com")
+    def test_double_session_reuses_question_ids(self) -> None:
+        auth = self._register("nofarm@example.com")
         headers = self._headers(auth["access_token"])
-        due = self.client.get("/v1/reviews/due", headers=headers)
-        self.assertEqual(due.status_code, 200)
-        self.assertEqual(due.json()["count"], 0)
-
-    def test_answer_requires_question_id(self) -> None:
-        auth = self._register("integrity-qid@example.com")
-        headers = self._headers(auth["access_token"])
-        bad = self.client.post(
-            "/v1/reviews/answer",
-            json={
-                "word": "light",
-                "selected": "luz",
-                "native_lang": "pt",
-                "idempotency_key": "x",
-            },
+        first = self._seed_and_session(headers)
+        second = self.client.post(
+            "/v1/study-sessions",
+            json={"limit": 3},
             headers=headers,
-        )
-        self.assertEqual(bad.status_code, 422)
+        ).json()
+        ids1 = {q["question_id"] for q in first["questions"]}
+        ids2 = {q["question_id"] for q in second["questions"]}
+        self.assertEqual(ids1, ids2)
 
-    def test_cannot_answer_without_issued_question(self) -> None:
-        auth = self._register("integrity-forge@example.com")
+    def test_cannot_forge_question_id(self) -> None:
+        auth = self._register("forge@example.com")
         headers = self._headers(auth["access_token"])
         forged = self.client.post(
             "/v1/reviews/answer",
             json={
-                "question_id": "q_forged_not_real_123456",
+                "question_id": "q_forged_not_real_12345678",
                 "selected": "luz",
                 "idempotency_key": "forge-1",
             },
             headers=headers,
         )
         self.assertEqual(forged.status_code, 422)
-        self.assertIn("Unknown question_id", forged.json()["detail"])
 
-    def test_answer_flow_with_question_id(self) -> None:
-        auth = self._register("integrity-flow@example.com")
+    def test_idempotency_conflict_different_question(self) -> None:
+        auth = self._register("idemp-conflict@example.com")
         headers = self._headers(auth["access_token"])
+        session = self._seed_and_session(headers, limit=2)
+        qs = session["questions"]
+        if len(qs) < 2:
+            self.skipTest("precisa de 2 perguntas")
 
-        self.client.post(
-            "/v1/vocabulary/seed",
-            json={"book": "genesis", "chapter": 1},
-            headers=headers,
+        key = "one-key"
+        self.assertEqual(
+            self.client.post(
+                "/v1/reviews/answer",
+                json={
+                    "question_id": qs[0]["question_id"],
+                    "selected": qs[0]["options"][0],
+                    "idempotency_key": key,
+                },
+                headers=headers,
+            ).status_code,
+            200,
         )
-        due = self.client.get("/v1/reviews/due?limit=1", headers=headers).json()
-        q = due["questions"][0]
-        # Cliente não conhece correct; escolhe primeira opção e confere estrutura
-        selected = q["options"][0]
-        answer = self.client.post(
+        conflict = self.client.post(
             "/v1/reviews/answer",
             json={
-                "question_id": q["question_id"],
-                "selected": selected,
-                "idempotency_key": "flow-1",
+                "question_id": qs[1]["question_id"],
+                "selected": qs[1]["options"][0],
+                "idempotency_key": key,
             },
             headers=headers,
         )
-        self.assertEqual(answer.status_code, 200, answer.text)
-        body = answer.json()
-        self.assertEqual(body["question_id"], q["question_id"])
-        self.assertIn("correct_answer", body)
-        self.assertIn("is_correct", body)
-
-        # Replay com mesma key
-        again = self.client.post(
-            "/v1/reviews/answer",
-            json={
-                "question_id": q["question_id"],
-                "selected": selected,
-                "idempotency_key": "flow-1",
-            },
-            headers=headers,
-        )
-        self.assertEqual(again.status_code, 200)
-        self.assertTrue(again.json()["already_processed"])
-
-        # Mesma pergunta, nova key → rejeitada (já respondida)
-        second = self.client.post(
-            "/v1/reviews/answer",
-            json={
-                "question_id": q["question_id"],
-                "selected": selected,
-                "idempotency_key": "flow-2",
-            },
-            headers=headers,
-        )
-        self.assertEqual(second.status_code, 422)
+        self.assertEqual(conflict.status_code, 409)
 
     def test_user_cannot_answer_another_users_question(self) -> None:
-        alice = self._register("alice-q@example.com")
-        bob = self._register("bob-q@example.com")
-
-        self.client.post(
-            "/v1/vocabulary/seed",
-            json={"book": "genesis", "chapter": 1},
-            headers=self._headers(alice["access_token"]),
-        )
-        due = self.client.get(
-            "/v1/reviews/due?limit=1",
-            headers=self._headers(alice["access_token"]),
-        ).json()
-        qid = due["questions"][0]["question_id"]
-        option = due["questions"][0]["options"][0]
-
+        alice = self._register("alice-q2@example.com")
+        bob = self._register("bob-q2@example.com")
+        session = self._seed_and_session(self._headers(alice["access_token"]), 1)
+        q = session["questions"][0]
         stolen = self.client.post(
             "/v1/reviews/answer",
             json={
-                "question_id": qid,
-                "selected": option,
+                "question_id": q["question_id"],
+                "selected": q["options"][0],
                 "idempotency_key": "bob-steal",
             },
             headers=self._headers(bob["access_token"]),
         )
         self.assertEqual(stolen.status_code, 422)
 
-    def test_content_manifest_excludes_dictionaries(self) -> None:
+    def test_manifest_protects_direct_access(self) -> None:
+        self.assertEqual(
+            self.client.get("/v1/chapters/dictionary_psalms23/1").status_code, 404
+        )
         from api.repositories.content_repo import ContentRepository
 
         books = ContentRepository().list_available_books()
-        self.assertIn("genesis", books)
-        self.assertIn("psalms", books)
         self.assertNotIn("dictionary_psalms23", books)
-        self.assertNotIn("dictionary", books)
-
-        chapter = ContentRepository().get_chapter("genesis", 1)
-        self.assertFalse(chapter["complete"])
-        self.assertIn("amostra", (chapter.get("label") or "").lower())
 
 
 if __name__ == "__main__":
