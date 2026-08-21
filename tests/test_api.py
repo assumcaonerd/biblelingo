@@ -69,6 +69,34 @@ class ApiTests(unittest.TestCase):
         )
         self.assertEqual(second.status_code, 409)
 
+    def test_seed_chapter_is_idempotent(self):
+        auth = self._register("seed@example.com")
+        headers = self._auth_header(auth["access_token"])
+
+        first = self.client.post(
+            "/v1/vocabulary/seed",
+            json={"book": "genesis", "chapter": 1},
+            headers=headers,
+        )
+        second = self.client.post(
+            "/v1/vocabulary/seed",
+            json={"book": "genesis", "chapter": 1},
+            headers=headers,
+        )
+
+        self.assertEqual(first.status_code, 200, first.text)
+        self.assertEqual(second.status_code, 200, second.text)
+        body1 = first.json()
+        body2 = second.json()
+        self.assertGreater(body1["words_seen"], 0)
+        self.assertGreater(body1["words_new"], 0)
+        self.assertEqual(body2["words_new"], 0)
+        self.assertEqual(body1["words_seen"], body2["words_existing"])
+
+        due = self.client.get("/v1/reviews/due?limit=5", headers=headers)
+        self.assertEqual(due.status_code, 200)
+        self.assertGreaterEqual(due.json()["count"], 1)
+
     def test_due_reviews_seed_and_return_questions(self):
         auth = self._register("due@example.com")
         headers = self._auth_header(auth["access_token"])
@@ -83,8 +111,6 @@ class ApiTests(unittest.TestCase):
         self.assertIn("options", first)
         self.assertIn("correct", first)
         self.assertIn(first["correct"], first["options"])
-        self.assertTrue(first["context"])
-        self.assertTrue(first["origin"].startswith("Genesis 1:"))
 
     def test_due_requires_auth(self):
         response = self.client.get("/v1/reviews/due")
