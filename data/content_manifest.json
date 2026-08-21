@@ -1,0 +1,38 @@
+{
+  "translation": "WEB",
+  "edition": "sample-dev",
+  "license": "public-domain",
+  "note": "World English Bible text is public domain; samples may be partial chapters.",
+  "books": [
+    {
+      "id": "genesis",
+      "title": "Genesis",
+      "file": "genesis_sample.json",
+      "chapters": [
+        {
+          "number": 1,
+          "verse_range": "1-10",
+          "complete": false,
+          "label": "Gênesis 1:1-10 (amostra)"
+        }
+      ]
+    },
+    {
+      "id": "psalms",
+      "title": "Psalms",
+      "file": "psalms_sample.json",
+      "chapters": [
+        {
+          "number": 23,
+          "verse_range": "1-6",
+          "complete": true,
+          "label": "Salmos 23"
+        }
+      ]
+    }
+  ],
+  "dictionaries": [
+    "dictionary.json",
+    "dictionary_psalms23.json"
+  ]
+}
