@@ -22,8 +22,9 @@ export function Review() {
   useEffect(() => {
     if (!token) return;
     setLoading(true);
+    // POST explícito: emite question_ids (não usa GET due para isso)
     api
-      .dueReviews(token, 5, native)
+      .createStudySession(token, 5, native)
       .then((data) => {
         setQuestions(data.questions);
         if (data.count === 0) {
@@ -79,7 +80,7 @@ export function Review() {
   }
 
   if (loading) {
-    return <p className="muted">Carregando palavras vencidas…</p>;
+    return <p className="muted">Preparando sessão de estudo…</p>;
   }
 
   if (loadError && questions.length === 0) {
