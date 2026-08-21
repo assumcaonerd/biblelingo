@@ -1,6 +1,11 @@
 # Cache de áudio gerado
 data/audio_cache/
 
+# Banco SQLite local da API
+data/biblelingo.db
+data/biblelingo.db-shm
+data/biblelingo.db-wal
+
 # Arquivos de progresso do usuário
 progress.json
 vocabulary.json
