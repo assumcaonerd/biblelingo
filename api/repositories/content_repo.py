@@ -9,6 +9,10 @@ from typing import Any
 from app.bible_loader import get_chapter, get_verse_text, load_book
 
 
+class ContentNotFoundError(LookupError):
+    """Livro/capítulo fora do manifest."""
+
+
 class ContentRepository:
     def __init__(self, data_dir: str | Path = "data"):
         self.data_dir = Path(data_dir)
@@ -22,6 +26,11 @@ class ContentRepository:
     def get_chapter(self, book: str, chapter: int) -> dict[str, Any]:
         book_id = book.lower()
         meta = self._chapter_meta(book_id, chapter)
+        if meta is None:
+            raise ContentNotFoundError(
+                f"Chapter not in content manifest: {book_id} {chapter}"
+            )
+
         book_data = load_book(book_id, data_dir=str(self.data_dir))
         verses_raw = get_chapter(book_data, chapter)
 
@@ -38,13 +47,12 @@ class ContentRepository:
             "book": book_id,
             "chapter": chapter,
             "verses": verses,
-            "label": meta.get("label") if meta else f"{book_id} {chapter}",
-            "complete": bool(meta.get("complete")) if meta else False,
-            "verse_range": meta.get("verse_range") if meta else None,
+            "label": meta.get("label") or f"{book_id} {chapter}",
+            "complete": bool(meta.get("complete")),
+            "verse_range": meta.get("verse_range"),
         }
 
     def list_available_books(self) -> list[str]:
-        """Lista livros a partir do manifest (nunca dicionários)."""
         manifest = self._load_manifest()
         return sorted({b["id"] for b in manifest.get("books", []) if "id" in b})
 
