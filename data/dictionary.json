@@ -1,198 +1,296 @@
 {
   "beginning": {
     "pt": "começo / princípio",
-    "es": "principio / comienzo"
+    "es": "principio / comienzo",
+    "ar": "بداية",
+    "he": "ראשית / התחלה"
   },
   "god": {
     "pt": "Deus",
-    "es": "Dios"
+    "es": "Dios",
+    "ar": "الله",
+    "he": "אלוהים"
   },
   "created": {
     "pt": "criou",
-    "es": "creó"
+    "es": "creó",
+    "ar": "خلق",
+    "he": "ברא"
   },
   "heavens": {
     "pt": "céus",
-    "es": "cielos"
+    "es": "cielos",
+    "ar": "السموات",
+    "he": "שמים"
   },
   "earth": {
     "pt": "terra",
-    "es": "tierra"
+    "es": "tierra",
+    "ar": "الأرض",
+    "he": "ארץ"
   },
   "formless": {
     "pt": "sem forma",
-    "es": "sin forma"
+    "es": "sin forma",
+    "ar": "بلا شكل",
+    "he": "תוהו"
   },
   "empty": {
     "pt": "vazio",
-    "es": "vacío"
+    "es": "vacío",
+    "ar": "فارغ",
+    "he": "בוהו / ריק"
   },
   "darkness": {
     "pt": "escuridão",
-    "es": "oscuridad"
+    "es": "oscuridad",
+    "ar": "ظلام",
+    "he": "חושך"
   },
   "surface": {
     "pt": "superfície",
-    "es": "superficie"
+    "es": "superficie",
+    "ar": "سطح",
+    "he": "פני"
   },
   "deep": {
     "pt": "abismo",
-    "es": "abismo"
+    "es": "abismo",
+    "ar": "عمق / غمر",
+    "he": "תהום"
   },
   "spirit": {
     "pt": "Espírito",
-    "es": "Espíritu"
+    "es": "Espíritu",
+    "ar": "روح",
+    "he": "רוח"
   },
   "hovering": {
     "pt": "pairava",
-    "es": "se movía / se cernía"
+    "es": "se movía / se cernía",
+    "ar": "يرفرف",
+    "he": "מרחפת"
   },
   "waters": {
     "pt": "águas",
-    "es": "aguas"
+    "es": "aguas",
+    "ar": "مياه",
+    "he": "מים"
   },
   "said": {
     "pt": "disse",
-    "es": "dijo"
+    "es": "dijo",
+    "ar": "قال",
+    "he": "אמר"
   },
   "light": {
     "pt": "luz",
-    "es": "luz"
+    "es": "luz",
+    "ar": "نور",
+    "he": "אור"
   },
   "saw": {
     "pt": "viu",
-    "es": "vio"
+    "es": "vio",
+    "ar": "رأى",
+    "he": "ראה"
   },
   "good": {
     "pt": "bom",
-    "es": "bueno"
+    "es": "bueno",
+    "ar": "حسن / جيد",
+    "he": "טוב"
   },
   "divided": {
     "pt": "separou",
-    "es": "separó"
+    "es": "separó",
+    "ar": "فصل",
+    "he": "הבדיל"
   },
   "called": {
     "pt": "chamou",
-    "es": "llamó"
+    "es": "llamó",
+    "ar": "دعى / سمّى",
+    "he": "קרא"
   },
   "day": {
     "pt": "dia",
-    "es": "día"
+    "es": "día",
+    "ar": "يوم",
+    "he": "יום"
   },
   "night": {
     "pt": "noite",
-    "es": "noche"
+    "es": "noche",
+    "ar": "ليل",
+    "he": "לילה"
   },
   "evening": {
     "pt": "tarde",
-    "es": "tarde"
+    "es": "tarde",
+    "ar": "مساء",
+    "he": "ערב"
   },
   "morning": {
     "pt": "manhã",
-    "es": "mañana"
+    "es": "mañana",
+    "ar": "صباح",
+    "he": "בוקר"
   },
   "first": {
     "pt": "primeiro",
-    "es": "primero"
+    "es": "primero",
+    "ar": "أول",
+    "he": "ראשון"
   },
   "expanse": {
     "pt": "firmamento / expansão",
-    "es": "expansión / firmamento"
+    "es": "expansión / firmamento",
+    "ar": "جلد / فضاء",
+    "he": "רקיע"
   },
   "middle": {
     "pt": "meio",
-    "es": "medio"
+    "es": "medio",
+    "ar": "وسط",
+    "he": "תוך"
   },
   "divide": {
     "pt": "dividir",
-    "es": "dividir"
+    "es": "dividir",
+    "ar": "يفصل",
+    "he": "להבדיל"
   },
   "made": {
     "pt": "fez",
-    "es": "hizo"
+    "es": "hizo",
+    "ar": "صنع",
+    "he": "עשה"
   },
   "under": {
     "pt": "debaixo",
-    "es": "debajo"
+    "es": "debajo",
+    "ar": "تحت",
+    "he": "מתחת"
   },
   "above": {
     "pt": "acima",
-    "es": "arriba"
+    "es": "arriba",
+    "ar": "فوق",
+    "he": "מעל"
   },
   "sky": {
     "pt": "céu",
-    "es": "cielo"
+    "es": "cielo",
+    "ar": "سماء",
+    "he": "שמים"
   },
   "second": {
     "pt": "segundo",
-    "es": "segundo"
+    "es": "segundo",
+    "ar": "ثانٍ",
+    "he": "שני"
   },
   "gathered": {
     "pt": "reunidas",
-    "es": "reunidas"
+    "es": "reunidas",
+    "ar": "اجتمعت",
+    "he": "נקוו"
   },
   "together": {
     "pt": "juntas",
-    "es": "juntas"
+    "es": "juntas",
+    "ar": "معاً",
+    "he": "יחד"
   },
   "place": {
     "pt": "lugar",
-    "es": "lugar"
+    "es": "lugar",
+    "ar": "مكان",
+    "he": "מקום"
   },
   "dry": {
     "pt": "seco",
-    "es": "seco"
+    "es": "seco",
+    "ar": "يابس",
+    "he": "יבשה"
   },
   "land": {
     "pt": "terra firme",
-    "es": "tierra seca"
+    "es": "tierra seca",
+    "ar": "يابسة",
+    "he": "יבשה"
   },
   "appear": {
     "pt": "apareça",
-    "es": "aparezca"
+    "es": "aparezca",
+    "ar": "تظهر",
+    "he": "תראה"
   },
   "seas": {
     "pt": "mares",
-    "es": "mares"
+    "es": "mares",
+    "ar": "بحار",
+    "he": "ימים"
   },
   "yield": {
     "pt": "produza",
-    "es": "produzca"
+    "es": "produzca",
+    "ar": "تنبت",
+    "he": "תדשא"
   },
   "grass": {
     "pt": "erva",
-    "es": "hierba"
+    "es": "hierba",
+    "ar": "عشب",
+    "he": "דשא"
   },
   "herbs": {
     "pt": "ervas",
-    "es": "hierbas"
+    "es": "hierbas",
+    "ar": "أعشاب",
+    "he": "עשב"
   },
   "yielding": {
     "pt": "que produzem",
-    "es": "que producen"
+    "es": "que producen",
+    "ar": "تُخرج",
+    "he": "מזריע"
   },
   "seeds": {
     "pt": "sementes",
-    "es": "semillas"
+    "es": "semillas",
+    "ar": "بذور",
+    "he": "זרעים"
   },
   "fruit": {
     "pt": "fruto",
-    "es": "fruto"
+    "es": "fruto",
+    "ar": "ثمر",
+    "he": "פרי"
   },
   "trees": {
     "pt": "árvores",
-    "es": "árboles"
+    "es": "árboles",
+    "ar": "أشجار",
+    "he": "עצים"
   },
   "bearing": {
     "pt": "que dão",
-    "es": "que dan"
+    "es": "que dan",
+    "ar": "تحمل",
+    "he": "עושה"
   },
   "kind": {
     "pt": "espécie",
-    "es": "especie"
+    "es": "especie",
+    "ar": "جنس",
+    "he": "מין"
   },
   "seed": {
     "pt": "semente",
-    "es": "semilla"
+    "es": "semilla",
+    "ar": "بذرة",
+    "he": "זרע"
   }
 }
