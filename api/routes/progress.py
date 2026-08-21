@@ -1,7 +1,8 @@
 """Rotas de progresso (XP, nível, streak)."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from api.dependencies import get_user_id
 from api.repositories.progress_repo import ProgressRepository
 from api.schemas.progress import LevelProgress, ProgressResponse
 
@@ -22,8 +23,8 @@ def _to_response(progress) -> ProgressResponse:
 
 
 @router.get("/progress", response_model=ProgressResponse)
-def get_progress():
-    """Retorna o progresso atual (XP, nível, streak e percentual até o próximo nível)."""
+def get_progress(user_id: str = Depends(get_user_id)):
+    """Retorna o progresso atual do usuário."""
     repo = ProgressRepository()
-    progress = repo.load()
+    progress = repo.load(user_id=user_id)
     return _to_response(progress)
