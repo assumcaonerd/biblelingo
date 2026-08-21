@@ -5,6 +5,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from api.database import initialize_database
 from api.main import app
 
 
@@ -14,6 +15,7 @@ class ApiTests(unittest.TestCase):
         self.db_path = Path(self.temp_dir.name) / "biblelingo.db"
         self.previous_db_path = os.environ.get("BIBLELINGO_DB_PATH")
         os.environ["BIBLELINGO_DB_PATH"] = str(self.db_path)
+        initialize_database()
         self.client = TestClient(app)
 
     def tearDown(self):
@@ -81,10 +83,20 @@ class ApiTests(unittest.TestCase):
         self.assertIn("options", first)
         self.assertIn("correct", first)
         self.assertIn(first["correct"], first["options"])
+        self.assertTrue(first["context"])
+        self.assertTrue(first["origin"].startswith("Genesis 1:"))
 
     def test_due_requires_auth(self):
         response = self.client.get("/v1/reviews/due")
         self.assertEqual(response.status_code, 401)
+
+    def test_due_rejects_unsupported_language(self):
+        auth = self._register("language@example.com")
+        response = self.client.get(
+            "/v1/reviews/due?native_lang=xx",
+            headers=self._auth_header(auth["access_token"]),
+        )
+        self.assertEqual(response.status_code, 422)
 
     def test_review_answer_is_atomic_and_idempotent(self):
         auth = self._register("alice@example.com")
