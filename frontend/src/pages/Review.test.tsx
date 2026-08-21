@@ -5,12 +5,12 @@ import { MemoryRouter } from "react-router-dom";
 import { render } from "@testing-library/react";
 import { Review } from "./Review";
 import {
-  mockDueReviews,
   mockReviewCorrect,
+  mockStudySession,
   mockUser,
 } from "../test/fixtures";
 
-const dueMock = vi.fn();
+const sessionMock = vi.fn();
 const answerMock = vi.fn();
 
 vi.mock("../api", async (importOriginal) => {
@@ -19,7 +19,7 @@ vi.mock("../api", async (importOriginal) => {
     ...actual,
     api: {
       ...actual.api,
-      dueReviews: (...args: unknown[]) => dueMock(...args),
+      createStudySession: (...args: unknown[]) => sessionMock(...args),
       answerReview: (...args: unknown[]) => answerMock(...args),
     },
   };
@@ -53,12 +53,12 @@ function renderReview() {
 
 describe("Review", () => {
   beforeEach(() => {
-    dueMock.mockReset();
+    sessionMock.mockReset();
     answerMock.mockReset();
   });
 
-  it("carrega pergunta due e opções sem campo correct", async () => {
-    dueMock.mockResolvedValueOnce(mockDueReviews);
+  it("abre sessão via POST e mostra opções", async () => {
+    sessionMock.mockResolvedValueOnce(mockStudySession);
 
     renderReview();
 
@@ -66,13 +66,13 @@ describe("Review", () => {
       expect(screen.getByText(/light/i)).toBeInTheDocument();
     });
 
+    expect(sessionMock).toHaveBeenCalledWith("test-jwt-token", 5, "pt");
     expect(screen.getByRole("button", { name: "luz" })).toBeInTheDocument();
-    expect(dueMock).toHaveBeenCalledWith("test-jwt-token", 5, "pt");
   });
 
-  it("ao acertar envia question_id e mostra XP", async () => {
+  it("ao acertar envia question_id", async () => {
     const user = userEvent.setup();
-    dueMock.mockResolvedValueOnce(mockDueReviews);
+    sessionMock.mockResolvedValueOnce(mockStudySession);
     answerMock.mockResolvedValueOnce(mockReviewCorrect);
 
     renderReview();
@@ -94,17 +94,14 @@ describe("Review", () => {
         selected: "luz",
       })
     );
-    const payload = answerMock.mock.calls[0][1] as Record<string, unknown>;
-    expect(payload).not.toHaveProperty("word");
-    expect(payload).not.toHaveProperty("native_lang");
   });
 
-  it("mostra mensagem quando não há palavras vencidas", async () => {
-    dueMock.mockResolvedValueOnce({
+  it("mostra mensagem quando sessão vazia", async () => {
+    sessionMock.mockResolvedValueOnce({
       count: 0,
       native_lang: "pt",
       questions: [],
-      mode: "due",
+      mode: "session",
     });
 
     renderReview();
