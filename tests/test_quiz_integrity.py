@@ -82,14 +82,18 @@ class QuizIntegrityTests(unittest.TestCase):
     def test_double_session_reuses_question_ids(self) -> None:
         auth = self._register("nofarm@example.com")
         headers = self._headers(auth["access_token"])
-        first = self._seed_and_session(headers)
-        second = self.client.post(
+        first = self._seed_and_session(headers, limit=20)
+        second_response = self.client.post(
             "/v1/study-sessions",
-            json={"limit": 3},
+            json={"limit": 20},
             headers=headers,
-        ).json()
-        ids1 = {q["question_id"] for q in first["questions"]}
-        ids2 = {q["question_id"] for q in second["questions"]}
+        )
+        self.assertEqual(second_response.status_code, 200, second_response.text)
+        second = second_response.json()
+
+        ids1 = {q["word"]: q["question_id"] for q in first["questions"]}
+        ids2 = {q["word"]: q["question_id"] for q in second["questions"]}
+        self.assertTrue(ids1)
         self.assertEqual(ids1, ids2)
 
     def test_cannot_forge_question_id(self) -> None:
@@ -192,30 +196,82 @@ class QuizIntegrityTests(unittest.TestCase):
         )
         self.assertEqual(conflict.status_code, 409, conflict.text)
 
-    def test_session_does_not_reuse_across_native_lang(self) -> None:
-        auth = self._register("lang-reuse@example.com")
-        headers = self._headers(auth["access_token"])
+    def _sessions_by_language(self, headers: dict) -> tuple[dict, dict]:
         self.client.post(
             "/v1/vocabulary/seed",
             json={"book": "genesis", "chapter": 1},
             headers=headers,
         )
-        pt = self.client.post(
+        pt_response = self.client.post(
             "/v1/study-sessions",
-            json={"limit": 1, "native_lang": "pt"},
+            json={"limit": 20, "native_lang": "pt"},
             headers=headers,
-        ).json()
-        es = self.client.post(
-            "/v1/study-sessions",
-            json={"limit": 1, "native_lang": "es"},
-            headers=headers,
-        ).json()
-        if not pt["questions"] or not es["questions"]:
-            self.skipTest("sem perguntas para pt/es")
-        self.assertNotEqual(
-            pt["questions"][0]["question_id"],
-            es["questions"][0]["question_id"],
         )
+        es_response = self.client.post(
+            "/v1/study-sessions",
+            json={"limit": 20, "native_lang": "es"},
+            headers=headers,
+        )
+        self.assertEqual(pt_response.status_code, 200, pt_response.text)
+        self.assertEqual(es_response.status_code, 200, es_response.text)
+        return pt_response.json(), es_response.json()
+
+    def test_session_does_not_reuse_across_native_lang(self) -> None:
+        auth = self._register("lang-reuse@example.com")
+        headers = self._headers(auth["access_token"])
+        pt, es = self._sessions_by_language(headers)
+
+        pt_by_word = {q["word"]: q for q in pt["questions"]}
+        es_by_word = {q["word"]: q for q in es["questions"]}
+        shared_words = sorted(pt_by_word.keys() & es_by_word.keys())
+        self.assertTrue(shared_words)
+
+        for word in shared_words:
+            self.assertNotEqual(
+                pt_by_word[word]["question_id"],
+                es_by_word[word]["question_id"],
+            )
+
+    def test_answer_consumes_same_word_across_native_lang(self) -> None:
+        auth = self._register("lang-consume@example.com")
+        headers = self._headers(auth["access_token"])
+        pt, es = self._sessions_by_language(headers)
+
+        pt_by_word = {q["word"]: q for q in pt["questions"]}
+        es_by_word = {q["word"]: q for q in es["questions"]}
+        shared_words = sorted(pt_by_word.keys() & es_by_word.keys())
+        self.assertTrue(shared_words)
+
+        word = shared_words[0]
+        pt_question = pt_by_word[word]
+        es_question = es_by_word[word]
+
+        first = self.client.post(
+            "/v1/reviews/answer",
+            json={
+                "question_id": pt_question["question_id"],
+                "selected": pt_question["options"][0],
+                "idempotency_key": "lang-first",
+            },
+            headers=headers,
+        )
+        self.assertEqual(first.status_code, 200, first.text)
+        xp_after_first = first.json()["progress"]["xp"]
+
+        sibling = self.client.post(
+            "/v1/reviews/answer",
+            json={
+                "question_id": es_question["question_id"],
+                "selected": es_question["options"][0],
+                "idempotency_key": "lang-second",
+            },
+            headers=headers,
+        )
+        self.assertEqual(sibling.status_code, 422, sibling.text)
+
+        dashboard = self.client.get("/v1/dashboard", headers=headers)
+        self.assertEqual(dashboard.status_code, 200, dashboard.text)
+        self.assertEqual(dashboard.json()["progress"]["xp"], xp_after_first)
 
 
 if __name__ == "__main__":
