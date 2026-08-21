@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -16,3 +16,9 @@ class ChapterOut(BaseModel):
     book: str = Field(description="Nome do livro, ex: genesis")
     chapter: int
     verses: List[VerseOut]
+    label: Optional[str] = Field(
+        default=None,
+        description="Rótulo editorial, ex: Gênesis 1:1-10 (amostra)",
+    )
+    complete: bool = False
+    verse_range: Optional[str] = None
