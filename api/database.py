@@ -12,6 +12,14 @@ DEFAULT_DATABASE_PATH = Path("data/biblelingo.db")
 
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    native_language TEXT NOT NULL DEFAULT 'pt',
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS progress (
     user_id TEXT PRIMARY KEY,
     xp INTEGER NOT NULL DEFAULT 0,
