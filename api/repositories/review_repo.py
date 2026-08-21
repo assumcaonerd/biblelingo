@@ -8,7 +8,7 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
-from api.database import DEFAULT_USER_ID
+from api.database import DEFAULT_USER_ID, connect_readonly
 from api.schemas.progress import LevelProgress, ProgressResponse
 from app.domain.progress import Progress
 from app.domain.quiz import generate_quiz
@@ -45,12 +45,11 @@ class ReviewRepository:
         review_date = today or date.today()
         limit = max(1, min(int(limit), 50))
 
-        # Conexão somente leitura — sem BEGIN IMMEDIATE / lock de escrita.
-        from api.database import connect
-
-        connection = connect(self.progress_repo.db_path)
+        connection = connect_readonly(self.progress_repo.db_path)
         try:
-            vocabulary = self.vocabulary_repo.load(connection, user_id)
+            vocabulary = self.vocabulary_repo.load(
+                connection, user_id, migrate_legacy=False
+            )
             due_words = vocabulary.get_due_words(limit=limit, today=review_date)
             words = []
             for w in due_words:
