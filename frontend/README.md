@@ -7,6 +7,7 @@ Interface web do BibleLingo: login, leitura bíblica, áudio, prática de vocabu
 - React 18 + TypeScript
 - Vite 5
 - React Router 6
+- Vitest (testes do cliente HTTP)
 - Web Speech API (`en-US`) para pronúncia no navegador
 
 ## Requisitos
@@ -39,19 +40,31 @@ Abra http://127.0.0.1:5173
 | `npm run dev` | Servidor de desenvolvimento |
 | `npm run build` | Typecheck (`tsc`) + build de produção |
 | `npm run preview` | Serve o build localmente |
+| `npm test` | Vitest (uma passagem) |
+| `npm run test:watch` | Vitest em modo watch |
+| `npm run lint` | ESLint |
+
+## Tipos e mocks
+
+- Contratos: [`src/types/api.ts`](src/types/api.ts) (espelho de `api/schemas/`)
+- Fixtures tipadas: [`src/test/fixtures.ts`](src/test/fixtures.ts)
+- Exemplo: [`src/api.test.ts`](src/api.test.ts)
 
 ## Estrutura útil
 
 ```text
 src/
   api.ts              # Cliente HTTP tipado
+  api.test.ts         # Testes Vitest com fetch mockado
   auth.tsx            # Sessão JWT + revalidação /v1/me
+  types/api.ts        # Contratos TS ↔ Pydantic
+  test/fixtures.ts    # Payloads de mock
   components/         # SpeakButton, etc.
   pages/              # Auth, Dashboard, Reader, Review
 ```
 
 ## Contribuição
 
-1. Mantenha TypeScript estrito (`npm run build` deve passar).
+1. `npm test` e `npm run build` devem passar.
 2. Não comite `.env` — use apenas `.env.example`.
-3. O CI da raiz executa `npm ci` e `npm run build` em todo push/PR.
+3. Novos endpoints: atualize `types/api.ts` e, se fizer sentido, `test/fixtures.ts`.
