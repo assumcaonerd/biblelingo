@@ -1,16 +1,23 @@
-"""
-Gerador e executor de quizzes a partir do vocabulário.
+"""Adaptador de terminal para geração e execução de quizzes.
 
-O quiz trabalha sempre com traduções explicitamente disponíveis no idioma
-selecionado. Isso evita que uma pessoa receba, sem aviso, uma resposta em
-português ao escolher outro idioma.
+A seleção de traduções, geração de distratores e correção vivem em
+``app.domain.quiz``. Este módulo mantém apenas carregamento de arquivo,
+prompts, áudio, RTL e compatibilidade com o contrato de dicionários do CLI.
 """
+
+from __future__ import annotations
 
 import json
-import random
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
+from app.domain.quiz import (
+    QuizQuestion,
+    answer_question as domain_answer_question,
+    check_answer as domain_check_answer,
+    generate_quiz as domain_generate_quiz,
+    get_translation as domain_get_translation,
+)
 from app.languages import DEFAULT_NATIVE, get_ui, is_rtl
 from app.rtl import prepare_rtl
 
@@ -31,25 +38,11 @@ def load_dictionary(path: str = "data/dictionary.json") -> Dict[str, Dict[str, s
 
 def get_translation(
     word: str,
-    dictionary: Dict,
+    dictionary: Dict[str, Dict[str, str]],
     native_lang: str = DEFAULT_NATIVE,
 ) -> Optional[str]:
-    """Retorna uma tradução no idioma solicitado, sem fallback silencioso."""
-    entry = dictionary.get(word)
-    if not isinstance(entry, dict):
-        return None
-    translation = entry.get(native_lang)
-    return str(translation).strip() if translation else None
-
-
-def _unique_translations(dictionary: Dict[str, Dict[str, str]], native_lang: str) -> List[str]:
-    """Lista traduções únicas e não vazias do idioma escolhido."""
-    values = {
-        str(entry[native_lang]).strip()
-        for entry in dictionary.values()
-        if isinstance(entry, dict) and entry.get(native_lang)
-    }
-    return sorted(values, key=str.casefold)
+    """Mantém a função histórica delegando ao domínio sem fallback."""
+    return domain_get_translation(word, dictionary, native_lang)
 
 
 def generate_quiz(
@@ -57,58 +50,38 @@ def generate_quiz(
     dictionary: Dict[str, Dict[str, str]],
     native_lang: str = DEFAULT_NATIVE,
     limit: int = 5,
+    contexts: Mapping[str, str] | None = None,
 ) -> List[Dict[str, Any]]:
-    """Gera perguntas de tradução com opções únicas e idioma consistente."""
-    if limit <= 0:
-        return []
-
-    available = []
-    for word in words:
-        translation = get_translation(word, dictionary, native_lang)
-        if translation:
-            available.append((word, translation))
-
-    if not available:
-        return []
-
-    selected = available if len(available) <= limit else random.sample(available, limit)
-    all_translations = _unique_translations(dictionary, native_lang)
-    questions = []
-
-    for word, correct in selected:
-        distractors = [translation for translation in all_translations if translation != correct]
-        # Com menos de duas opções erradas, não fabricamos "???"; é melhor
-        # deixar a pergunta fora do quiz do que ensinar uma opção falsa.
-        if len(distractors) < 2:
-            continue
-        wrong = random.sample(distractors, min(3, len(distractors)))
-        options = wrong + [correct]
-        random.shuffle(options)
-
-        questions.append({
-            "type": "translate",
-            "word": word,
-            "options": options,
-            "correct": correct,
-        })
-
-    return questions
+    """Gera o contrato legado de dicionários para o CLI."""
+    questions = domain_generate_quiz(
+        words,
+        dictionary,
+        native_lang=native_lang,
+        limit=limit,
+        contexts=contexts,
+    )
+    return [question.to_dict() for question in questions]
 
 
 def check_answer(question: Dict[str, Any], user_answer: str) -> bool:
-    """Compara respostas ignorando espaços e diferenças de maiúsculas."""
-    return user_answer.strip().casefold() == question["correct"].strip().casefold()
+    """Mantém a API histórica e delega a correção ao domínio."""
+    return domain_check_answer(question, user_answer)
+
+
+def answer_question(question: Dict[str, Any], selected: str) -> Dict[str, Any]:
+    """Retorna o resultado estruturado de uma resposta do CLI ou API."""
+    return domain_answer_question(question, selected).to_dict()
 
 
 def _t(text: str, lang: str) -> str:
-    """Aplica preparação RTL se o idioma for RTL."""
+    """Aplica preparação RTL somente na camada de apresentação."""
     if is_rtl(lang):
         return prepare_rtl(text, lang)
     return text
 
 
 def _record_review(vocabulary, word: str, correct: bool):
-    """Usa a nova API e mantém compatibilidade com objetos antigos em testes."""
+    """Usa a API de domínio e mantém compatibilidade com objetos antigos."""
     if not vocabulary:
         return
     if hasattr(vocabulary, "record_review"):
@@ -196,3 +169,14 @@ def run_quiz(
         "incorrect": incorrect_count,
         "total": len(questions),
     }
+
+
+__all__ = [
+    "QuizQuestion",
+    "answer_question",
+    "check_answer",
+    "generate_quiz",
+    "get_translation",
+    "load_dictionary",
+    "run_quiz",
+]
