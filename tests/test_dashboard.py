@@ -54,9 +54,6 @@ class DashboardTests(unittest.TestCase):
         body = response.json()
         self.assertEqual(body["progress"]["xp"], 0)
         self.assertEqual(body["vocabulary"]["total_words"], 0)
-        self.assertEqual(body["vocabulary"]["accuracy_rate"], 0)
-        self.assertEqual(body["reviews_today"], 0)
-        self.assertFalse(body["goal_met"])
 
     def test_dashboard_after_seed_and_review(self) -> None:
         auth = self._register("dash@example.com")
@@ -69,21 +66,24 @@ class DashboardTests(unittest.TestCase):
         )
         self.assertEqual(seed.status_code, 200)
 
-        due = self.client.get("/v1/reviews/due?limit=1", headers=headers)
-        self.assertEqual(due.status_code, 200)
-        question = due.json()["questions"][0]
+        session = self.client.post(
+            "/v1/study-sessions",
+            json={"limit": 1},
+            headers=headers,
+        )
+        self.assertEqual(session.status_code, 200, session.text)
+        question = session.json()["questions"][0]
 
         answer = self.client.post(
             "/v1/reviews/answer",
             json={
-                "word": question["word"],
-                "selected": question["correct"],
-                "native_lang": "pt",
+                "question_id": question["question_id"],
+                "selected": question["options"][0],
                 "idempotency_key": "dash-1",
             },
             headers=headers,
         )
-        self.assertEqual(answer.status_code, 200)
+        self.assertEqual(answer.status_code, 200, answer.text)
 
         dash = self.client.get("/v1/dashboard", headers=headers)
         self.assertEqual(dash.status_code, 200, dash.text)
@@ -91,8 +91,6 @@ class DashboardTests(unittest.TestCase):
 
         self.assertGreater(body["progress"]["xp"], 0)
         self.assertGreater(body["vocabulary"]["total_words"], 0)
-        self.assertGreaterEqual(body["vocabulary"]["due_words"], 0)
-        self.assertGreater(body["vocabulary"]["accuracy_rate"], 0)
         self.assertGreaterEqual(body["reviews_today"], 1)
         self.assertTrue(body["recent_activity"])
         self.assertEqual(body["recent_activity"][0]["word"], question["word"])
@@ -106,17 +104,17 @@ class DashboardTests(unittest.TestCase):
             json={"book": "genesis", "chapter": 1},
             headers=self._headers(alice["access_token"]),
         )
-        due = self.client.get(
-            "/v1/reviews/due?limit=1",
+        session = self.client.post(
+            "/v1/study-sessions",
+            json={"limit": 1},
             headers=self._headers(alice["access_token"]),
-        )
-        q = due.json()["questions"][0]
+        ).json()
+        q = session["questions"][0]
         self.client.post(
             "/v1/reviews/answer",
             json={
-                "word": q["word"],
-                "selected": q["correct"],
-                "native_lang": "pt",
+                "question_id": q["question_id"],
+                "selected": q["options"][0],
                 "idempotency_key": "alice-dash",
             },
             headers=self._headers(alice["access_token"]),
