@@ -1,6 +1,6 @@
 /**
  * Cliente HTTP da API BibleLingo.
- * Tipos: ver src/types/api.ts (espelho de api/schemas/*.py).
+ * Tipos: ver src/types/api.ts
  */
 
 import type {
@@ -12,6 +12,7 @@ import type {
   ReviewAnswerRequest,
   ReviewAnswerResponse,
   SeedChapterResponse,
+  StudySessionResponse,
   TokenResponse,
   User,
 } from "./types/api";
@@ -21,6 +22,7 @@ export type {
   Dashboard,
   DueQuestion,
   DueReviews,
+  DueWordItem,
   LevelProgress,
   NativeLanguage,
   Progress,
@@ -33,6 +35,7 @@ export type {
   SeedChapterRequest,
   SeedChapterResponse,
   SeedResult,
+  StudySessionResponse,
   TokenResponse,
   User,
   VocabularyStats,
@@ -135,12 +138,22 @@ export const api = {
     }).then((r) => handle<SeedChapterResponse>(r));
   },
 
-  dueReviews(token: string, limit = 5, native_lang?: string) {
+  /** GET puro: palavras vencidas (sem emitir question_id). */
+  dueReviews(token: string, limit = 20, native_lang?: string) {
     const params = new URLSearchParams({ limit: String(limit) });
     if (native_lang) params.set("native_lang", native_lang);
     return fetch(`${API_BASE}/v1/reviews/due?${params}`, {
       headers: authHeaders(token),
     }).then((r) => handle<DueReviews>(r));
+  },
+
+  /** POST: emite perguntas com question_id. */
+  createStudySession(token: string, limit = 5, native_lang?: string) {
+    return fetch(`${API_BASE}/v1/study-sessions`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ limit, native_lang }),
+    }).then((r) => handle<StudySessionResponse>(r));
   },
 
   answerReview(token: string, payload: ReviewAnswerRequest) {
