@@ -68,11 +68,14 @@ jobs:
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
-          npm install --no-save eslint @eslint/js typescript-eslint eslint-plugin-react-hooks eslint-plugin-react-refresh globals
+          npm install --no-save eslint @eslint/js typescript-eslint eslint-plugin-react-hooks eslint-plugin-react-refresh globals vitest
 
       - name: ESLint
         run: npm run lint
         continue-on-error: true
+
+      - name: Unit tests (Vitest)
+        run: npm test
 
       - name: Typecheck and build
         run: npm run build
