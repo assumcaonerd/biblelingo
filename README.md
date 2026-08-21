@@ -16,37 +16,47 @@ Estamos construindo do zero, seguindo a filosofia *build-your-own*.
 - Sistema de **XP** e **níveis**
 - Sistema de **Streak** (dias consecutivos)
 - Bônus de XP baseado no streak
-- Persistência em JSON
+- Carregador da Bíblia WEB (Gênesis sample)
+- Parser de palavras (com stop words)
+- **Vocabulário do usuário** (adicionar palavras a partir dos versículos)
+- Persistência em JSON (progresso + vocabulário)
 
-### Em construção
-- Carregamento dos livros da WEB
-- Parser de palavras
-- Vocabulário do usuário
+### Próximos passos
 - Quiz engine
-- Interface (terminal primeiro, depois web)
+- Interface mais interativa no terminal
+- Mais capítulos / livros
+- Web interface (Flask ou similar)
 
 ## Como rodar
 
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/assumcaonerd/biblelingo.git
+cd biblelingo
 python main.py
 ```
+
+Na primeira execução ele:
+1. Mostra Gênesis 1
+2. Extrai palavras novas
+3. Adiciona ao vocabulário
+4. Dá XP e atualiza o streak
 
 ## Estrutura
 
 ```
 biblelingo/
 ├── app/
-│   ├── progress.py      # XP + Streak (pronto)
-│   ├── bible_loader.py
-│   ├── parser.py
-│   ├── vocabulary.py
-│   └── quiz.py
-├── data/                # JSONs da WEB e dicionário
+│   ├── progress.py       # XP + Streak
+│   ├── bible_loader.py   # Carrega WEB
+│   ├── parser.py         # Extrai palavras
+│   ├── vocabulary.py     # Vocabulário do usuário
+│   └── quiz.py           # (próximo)
+├── data/
+│   └── genesis_sample.json
 ├── main.py
 └── requirements.txt
 ```
 
 ## Filosofia
 
-O código está sendo escrito de forma progressiva e educativa. Cada módulo tem TODOs claros para quem quiser contribuir ou aprender mexendo.
+Código escrito de forma progressiva. Cada módulo pode ser estudado e estendido isoladamente.
