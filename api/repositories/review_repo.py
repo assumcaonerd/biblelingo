@@ -279,9 +279,15 @@ class ReviewRepository:
             ProgressRepository.save_connection(connection, progress, user_id)
             self.vocabulary_repo.save(connection, vocabulary, user_id)
 
+            # Uma revisão lógica da palavra só pode ser consumida uma vez.
+            # Perguntas pendentes em outros idiomas são invalidadas junto.
             connection.execute(
-                "UPDATE study_questions SET answered = 1 WHERE question_id = ?",
-                (qid,),
+                """
+                UPDATE study_questions
+                SET answered = 1
+                WHERE user_id = ? AND word = ? AND answered = 0
+                """,
+                (user_id, normalized_word),
             )
 
             created_at = datetime.now(UTC).isoformat()
