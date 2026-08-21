@@ -1,115 +1,45 @@
-/** Cliente HTTP da API BibleLingo. */
+/**
+ * Cliente HTTP da API BibleLingo.
+ * Tipos: ver src/types/api.ts (espelho de api/schemas/*.py).
+ */
+
+import type {
+  Chapter,
+  Dashboard,
+  DueReviews,
+  NativeLanguage,
+  Progress,
+  ReviewAnswerRequest,
+  ReviewAnswerResponse,
+  SeedChapterResponse,
+  TokenResponse,
+  User,
+} from "./types/api";
+
+export type {
+  Chapter,
+  Dashboard,
+  DueQuestion,
+  DueReviews,
+  LevelProgress,
+  NativeLanguage,
+  Progress,
+  RecentActivityItem,
+  RegisterRequest,
+  ReviewAnswer,
+  ReviewAnswerRequest,
+  ReviewAnswerResponse,
+  ReviewResult,
+  SeedChapterRequest,
+  SeedChapterResponse,
+  SeedResult,
+  TokenResponse,
+  User,
+  VocabularyStats,
+  Verse,
+} from "./types/api";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
-
-export type User = {
-  id: string;
-  email: string;
-  native_language: string;
-  created_at?: string;
-};
-
-export type TokenResponse = {
-  access_token: string;
-  token_type: string;
-  user: User;
-};
-
-export type Progress = {
-  xp: number;
-  level: number;
-  current_streak: number;
-  longest_streak: number;
-  last_activity_date: string | null;
-  streak_bonus: number;
-  level_progress: {
-    current: number;
-    level_start: number;
-    next_level: number;
-    percent: number;
-  };
-};
-
-export type VocabularyStats = {
-  total_words: number;
-  due_words: number;
-  reviewed_words: number;
-  never_reviewed: number;
-  total_reviews: number;
-  correct_reviews: number;
-  incorrect_reviews: number;
-  accuracy_rate: number;
-};
-
-export type RecentActivityItem = {
-  word: string;
-  is_correct: boolean;
-  xp_awarded: number;
-  created_at: string;
-};
-
-export type Dashboard = {
-  progress: Progress;
-  vocabulary: VocabularyStats;
-  recent_activity: RecentActivityItem[];
-  daily_goal: number;
-  reviews_today: number;
-  goal_met: boolean;
-  last_activity_date: string | null;
-};
-
-export type Verse = {
-  verse_number: number;
-  text: string;
-};
-
-export type Chapter = {
-  book: string;
-  chapter: number;
-  verses: Verse[];
-};
-
-export type ReviewAnswer = {
-  word: string;
-  selected: string;
-  native_lang: string;
-  idempotency_key: string;
-};
-
-export type ReviewResult = {
-  is_correct: boolean;
-  correct_answer: string;
-  xp_awarded: number;
-  already_processed: boolean;
-  next_review?: string;
-  review_streak?: number;
-};
-
-export type DueQuestion = {
-  word: string;
-  options: string[];
-  correct: string;
-  context: string;
-  origin: string;
-  next_review?: string | null;
-};
-
-export type DueReviews = {
-  count: number;
-  native_lang: string;
-  questions: DueQuestion[];
-};
-
-export type SeedResult = {
-  book: string;
-  chapter: number;
-  words_seen: number;
-  words_new: number;
-  words_existing: number;
-  words_with_translation: number;
-  due_count: number;
-  sample_new: string[];
-};
 
 export class ApiError extends Error {
   status: number;
@@ -129,10 +59,19 @@ function authHeaders(token: string | null): HeadersInit {
 
 async function handle<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    let detail = res.statusText;
+    let detail: unknown = res.statusText;
     try {
-      const body = await res.json();
-      detail = body.detail ?? JSON.stringify(body);
+      const body: unknown = await res.json();
+      if (
+        body &&
+        typeof body === "object" &&
+        "detail" in body &&
+        (body as { detail: unknown }).detail !== undefined
+      ) {
+        detail = (body as { detail: unknown }).detail;
+      } else {
+        detail = body;
+      }
     } catch {
       /* ignore */
     }
@@ -144,7 +83,11 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export const api = {
-  register(email: string, password: string, native_language = "pt") {
+  register(
+    email: string,
+    password: string,
+    native_language: NativeLanguage = "pt"
+  ) {
     return fetch(`${API_BASE}/v1/auth/register`, {
       method: "POST",
       headers: authHeaders(null),
@@ -189,7 +132,7 @@ export const api = {
       method: "POST",
       headers: authHeaders(token),
       body: JSON.stringify({ book, chapter }),
-    }).then((r) => handle<SeedResult>(r));
+    }).then((r) => handle<SeedChapterResponse>(r));
   },
 
   dueReviews(token: string, limit = 5, native_lang?: string) {
@@ -200,11 +143,11 @@ export const api = {
     }).then((r) => handle<DueReviews>(r));
   },
 
-  answerReview(token: string, payload: ReviewAnswer) {
+  answerReview(token: string, payload: ReviewAnswerRequest) {
     return fetch(`${API_BASE}/v1/reviews/answer`, {
       method: "POST",
       headers: authHeaders(token),
       body: JSON.stringify(payload),
-    }).then((r) => handle<ReviewResult>(r));
+    }).then((r) => handle<ReviewAnswerResponse>(r));
   },
 };
