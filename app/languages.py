@@ -2,7 +2,7 @@
 Configuração de idiomas do BibleLingo.
 
 Idioma de aprendizado (target): inglês (WEB)
-Idioma nativo do usuário (source): português, espanhol, etc.
+Idioma nativo do usuário (source): português, espanhol, árabe, hebraico, etc.
 """
 
 from typing import Dict
@@ -14,18 +14,35 @@ SUPPORTED_NATIVE_LANGUAGES = {
         "name": "Português",
         "name_en": "Portuguese",
         "flag": "🇧🇷",
+        "rtl": False,
     },
     "es": {
         "code": "es",
         "name": "Español",
         "name_en": "Spanish",
         "flag": "🇪🇸",
+        "rtl": False,
     },
     "en": {
         "code": "en",
         "name": "English",
         "name_en": "English",
         "flag": "🇺🇸",
+        "rtl": False,
+    },
+    "ar": {
+        "code": "ar",
+        "name": "العربية",
+        "name_en": "Arabic",
+        "flag": "🇸🇦",
+        "rtl": True,
+    },
+    "he": {
+        "code": "he",
+        "name": "עברית",
+        "name_en": "Hebrew",
+        "flag": "🇮🇱",
+        "rtl": True,
     },
 }
 
@@ -119,6 +136,60 @@ UI_STRINGS: Dict[str, Dict[str, str]] = {
         "audio_unavailable": "Audio unavailable",
         "install_audio": "Install with: pip install edge-tts",
     },
+    "ar": {
+        "app_title": "BibleLingo",
+        "subtitle": "تعلّم الإنجليزية مع الكتاب المقدس",
+        "loading_chapter": "جاري تحميل سفر التكوين 1...",
+        "hear_text": "هل تريد سماع النص بالإنجليزية؟ (ن/ل): ",
+        "playing": "جاري التشغيل...",
+        "new_words": "كلمات جديدة تمت إضافتها",
+        "total_words": "المجموع في المفردات",
+        "examples": "أمثلة",
+        "quiz_title": "اختبار",
+        "hear_pronunciation": "سماع النطق؟ (ن/ل): ",
+        "your_answer": "إجابتك (رقم): ",
+        "correct": "صحيح!",
+        "wrong": "خطأ. الإجابة الصحيحة هي",
+        "result": "النتيجة",
+        "hits": "إجابات صحيحة",
+        "streak_bonus": "مكافأة السلسلة",
+        "level": "المستوى",
+        "xp": "XP",
+        "streak": "السلسلة",
+        "days": "أيام",
+        "words_in_vocab": "كلمات في المفردات",
+        "choose_language": "اختر لغتك الأم",
+        "meaning_of": "ما معنى",
+        "audio_unavailable": "الصوت غير متوفر",
+        "install_audio": "ثبّت باستخدام: pip install edge-tts",
+    },
+    "he": {
+        "app_title": "BibleLingo",
+        "subtitle": "לומדים אנגלית עם התנ״ך",
+        "loading_chapter": "טוען את בראשית פרק 1...",
+        "hear_text": "רוצה לשמוע את הטקסט באנגלית? (כ/ל): ",
+        "playing": "מנגן...",
+        "new_words": "מילים חדשות שנוספו",
+        "total_words": "סה״כ באוצר המילים",
+        "examples": "דוגמאות",
+        "quiz_title": "חידון",
+        "hear_pronunciation": "לשמוע הגייה? (כ/ל): ",
+        "your_answer": "התשובה שלך (מספר): ",
+        "correct": "נכון!",
+        "wrong": "לא נכון. התשובה הנכונה היא",
+        "result": "תוצאה",
+        "hits": "תשובות נכונות",
+        "streak_bonus": "בונוס רצף",
+        "level": "רמה",
+        "xp": "XP",
+        "streak": "רצף",
+        "days": "ימים",
+        "words_in_vocab": "מילים באוצר המילים",
+        "choose_language": "בחר את שפת האם שלך",
+        "meaning_of": "מה המשמעות של",
+        "audio_unavailable": "אודיו לא זמין",
+        "install_audio": "התקן עם: pip install edge-tts",
+    },
 }
 
 
@@ -130,3 +201,9 @@ def get_ui(lang: str = DEFAULT_NATIVE) -> Dict[str, str]:
 def get_native_language_name(code: str) -> str:
     lang = SUPPORTED_NATIVE_LANGUAGES.get(code)
     return lang["name"] if lang else code
+
+
+def is_rtl(lang: str) -> bool:
+    """Retorna True se o idioma é escrito da direita para a esquerda."""
+    info = SUPPORTED_NATIVE_LANGUAGES.get(lang, {})
+    return info.get("rtl", False)
