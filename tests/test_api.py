@@ -97,6 +97,29 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(due.status_code, 200)
         self.assertGreaterEqual(due.json()["count"], 1)
 
+    def test_psalms23_content_and_seed(self):
+        chapter = self.client.get("/v1/chapters/psalms/23")
+        self.assertEqual(chapter.status_code, 200, chapter.text)
+        body = chapter.json()
+        self.assertEqual(body["book"], "psalms")
+        self.assertEqual(body["chapter"], 23)
+        self.assertEqual(len(body["verses"]), 6)
+        self.assertIn("Yahweh is my shepherd", body["verses"][0]["text"])
+
+        auth = self._register("psalms@example.com")
+        headers = self._auth_header(auth["access_token"])
+        seeded = self.client.post(
+            "/v1/vocabulary/seed",
+            json={"book": "psalms", "chapter": 23},
+            headers=headers,
+        )
+        self.assertEqual(seeded.status_code, 200, seeded.text)
+        self.assertGreater(seeded.json()["words_new"], 0)
+        self.assertEqual(
+            seeded.json()["words_seen"],
+            seeded.json()["words_with_translation"],
+        )
+
     def test_due_reviews_seed_and_return_questions(self):
         auth = self._register("due@example.com")
         headers = self._auth_header(auth["access_token"])
