@@ -5,15 +5,15 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
+from api.database import DEFAULT_USER_ID
+from api.schemas.progress import LevelProgress, ProgressResponse
 from app.domain.progress import Progress
 from app.domain.quiz import generate_quiz
 from app.quiz import load_dictionary
 
-from api.database import DEFAULT_USER_ID
-from api.schemas.progress import LevelProgress, ProgressResponse
 from .progress_repo import ProgressRepository
 from .vocabulary_repo import VocabularyRepository
 
@@ -45,7 +45,10 @@ class ReviewRepository:
         review_date = today or date.today()
         limit = max(1, min(int(limit), 50))
 
-        connection = self.progress_repo.transaction()
+        # Conexão somente leitura — sem BEGIN IMMEDIATE / lock de escrita.
+        from api.database import connect
+
+        connection = connect(self.progress_repo.db_path)
         try:
             vocabulary = self.vocabulary_repo.load(connection, user_id)
             due_words = vocabulary.get_due_words(limit=limit, today=review_date)
@@ -60,16 +63,12 @@ class ReviewRepository:
                         "next_review": entry.get("next_review"),
                     }
                 )
-            connection.rollback()  # leitura — não persiste nada
             return {
                 "count": len(words),
                 "native_lang": native_lang,
                 "words": words,
                 "mode": "due",
             }
-        except Exception:
-            connection.rollback()
-            raise
         finally:
             connection.close()
 
@@ -81,7 +80,7 @@ class ReviewRepository:
         limit: int = 5,
         today: date | None = None,
     ) -> dict[str, Any]:
-        """POST: emite perguntas. Reutiliza question_id aberto da mesma palavra."""
+        """POST: emite perguntas. Reutiliza question_id aberto da mesma palavra+idioma."""
         review_date = today or date.today()
         limit = max(1, min(int(limit), 20))
         dictionary = load_dictionary()
@@ -108,20 +107,19 @@ class ReviewRepository:
                 contexts=contexts,
             )
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             expires = (now + timedelta(hours=QUESTION_TTL_HOURS)).isoformat()
             payload: list[dict[str, Any]] = []
 
             for q in questions:
-                # Anti-farming: reutilizar pergunta aberta da mesma palavra
                 existing = connection.execute(
                     """
                     SELECT * FROM study_questions
-                    WHERE user_id = ? AND word = ? AND answered = 0
-                      AND expires_at > ?
+                    WHERE user_id = ? AND word = ? AND native_lang = ?
+                      AND answered = 0 AND expires_at > ?
                     ORDER BY created_at DESC LIMIT 1
                     """,
-                    (user_id, q.word, now.isoformat()),
+                    (user_id, q.word, native_lang, now.isoformat()),
                 ).fetchone()
 
                 if existing is not None:
@@ -213,9 +211,15 @@ class ReviewRepository:
             ).fetchone()
             if existing is not None:
                 prev_qid = existing["question_id"] or ""
+                prev_selected = str(existing["selected"] or "")
+                selected_str = str(selected).strip()
                 if prev_qid and prev_qid != qid:
                     raise ReviewConflictError(
                         "idempotency_key already used for a different question_id"
+                    )
+                if prev_selected.casefold() != selected_str.casefold():
+                    raise ReviewConflictError(
+                        "idempotency_key already used with a different selected answer"
                     )
                 progress = ProgressRepository.from_connection(connection, user_id)
                 connection.rollback()
@@ -236,8 +240,8 @@ class ReviewRepository:
 
             expires_at = datetime.fromisoformat(question["expires_at"])
             if expires_at.tzinfo is None:
-                expires_at = expires_at.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) > expires_at:
+                expires_at = expires_at.replace(tzinfo=UTC)
+            if datetime.now(UTC) > expires_at:
                 raise ReviewInputError("question expired")
 
             options = json.loads(question["options_json"])
@@ -281,7 +285,7 @@ class ReviewRepository:
                 (qid,),
             )
 
-            created_at = datetime.now(timezone.utc).isoformat()
+            created_at = datetime.now(UTC).isoformat()
             connection.execute(
                 """
                 INSERT INTO review_events (
