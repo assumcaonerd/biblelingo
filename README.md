@@ -1,94 +1,61 @@
 # BibleLingo
 
-O BibleLingo é um aplicativo para estudar inglês por meio da leitura da **World English Bible (WEB)**. A pessoa lê um capítulo, ouve o inglês, salva palavras no vocabulário e pratica com um quiz curto.
+Aprenda inglês lendo e ouvindo a Bíblia (World English Bible).
 
-Há dois clientes da mesma camada de domínio:
+Clientes da mesma camada de domínio:
 
-- **CLI** (`python main.py`) — terminal interativo.
-- **API** (`uvicorn api.main:app`) — FastAPI com autenticação JWT.
+- **CLI** — `python main.py`
+- **API** — FastAPI + JWT + SQLite
+- **Frontend** — React (Vite) com login → leitura → quiz → progresso
 
-## O que já funciona
+## Subir tudo (desenvolvimento)
 
-| Área | Comportamento atual |
-| --- | --- |
-| Leitura | Gênesis 1 e formatação de versículos. |
-| Vocabulário | Origem, revisões, acertos, erros e próxima data. |
-| Revisão espaçada | Intervalos 1, 3, 7, 14 e 30 dias. |
-| Quiz / revisão API | Opções únicas, validação no servidor, XP atômico. |
-| Áudio | edge-tts com cache (opcional). |
-| Gamificação | XP, níveis, streak e percentual até o próximo nível. |
-| Idiomas | pt, es, en, ar, he (RTL). |
-| Domínio puro | `app/domain/` sem input/print/persistência. |
-| Persistência | SQLite com WAL e transações. |
-| **Autenticação** | Cadastro, login, JWT Bearer, `/v1/me`. |
-
-## CLI
-
-```bash
-git clone https://github.com/assumcaonerd/biblelingo.git
-cd biblelingo
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python main.py
-```
-
-## API FastAPI
+Terminal 1 — API:
 
 ```bash
 pip install -r requirements.txt
 uvicorn api.main:app --reload
 ```
 
-Docs: http://127.0.0.1:8000/docs
+Terminal 2 — Frontend:
 
-### Autenticação
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| POST | `/v1/auth/register` | Cria conta e devolve token |
-| POST | `/v1/auth/login` | Login e token |
-| GET | `/v1/me` | Perfil do usuário autenticado |
-
-Rotas protegidas (progresso e revisão) exigem:
-
-```http
-Authorization: Bearer <access_token>
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-### Outras rotas
+Abra http://127.0.0.1:5173
+
+O Vite faz proxy de `/api` para a API em `:8000`. CORS também está liberado para o dev server.
+
+## Fluxo do vertical slice
+
+1. Criar conta ou entrar
+2. Ver dashboard (nível, XP, streak)
+3. Ler Gênesis 1
+4. Praticar palavras (respostas vão para `POST /v1/reviews/answer`)
+5. Voltar ao dashboard e ver o progresso atualizado
+
+## API (resumo)
 
 | Método | Rota | Auth |
 | --- | --- | --- |
-| GET | `/health` | público |
-| GET | `/v1/chapters` | público |
-| GET | `/v1/chapters/{book}/{chapter}` | público |
+| POST | `/v1/auth/register` | público |
+| POST | `/v1/auth/login` | público |
+| GET | `/v1/me` | JWT |
 | GET | `/v1/progress` | JWT |
 | POST | `/v1/reviews/answer` | JWT |
+| GET | `/v1/chapters/{book}/{chapter}` | público |
+| GET | `/health` | público |
 
-### Exemplo rápido
+Docs: http://127.0.0.1:8000/docs
+
+## CLI
 
 ```bash
-# Registrar
-curl -X POST http://127.0.0.1:8000/v1/auth/register \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"voce@email.com","password":"secreta123","native_language":"pt"}'
-
-# Usar o access_token retornado
-TOKEN=...
-
-curl http://127.0.0.1:8000/v1/progress \
-  -H "Authorization: Bearer $TOKEN"
-
-curl -X POST http://127.0.0.1:8000/v1/reviews/answer \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d '{"word":"light","selected":"luz","native_lang":"pt","idempotency_key":"demo-1"}'
+python main.py
 ```
-
-Em produção defina `BIBLELINGO_SECRET_KEY` (chave forte para JWT).
-
-Banco padrão: `data/biblelingo.db` (ou `BIBLELINGO_DB_PATH`).
 
 ## Testes
 
@@ -100,24 +67,19 @@ python -m unittest discover -s tests -v
 
 ```text
 biblelingo/
-├── app/domain/          # regras puras
-├── api/
-│   ├── auth.py          # bcrypt + JWT
-│   ├── database.py      # SQLite + tabela users
-│   ├── dependencies.py  # get_current_user / get_user_id
-│   ├── repositories/    # users, progress, vocabulary, review
-│   ├── schemas/
-│   └── routes/          # auth, progress, chapters, reviews
+├── app/domain/       # regras puras
+├── api/              # FastAPI + SQLite + JWT
+├── frontend/         # React + Vite
 ├── tests/
-└── main.py              # CLI
+└── main.py           # CLI
 ```
 
 ## Próximos passos
 
-1. Vertical slice do frontend (login → leitura → quiz → progresso)
-2. Áudio e preferências pela API
-3. CI, migrações versionadas, observabilidade e deploy
+- `GET /v1/reviews/due` alimentando o quiz pelo servidor
+- Áudio no frontend
+- CI, migrações versionadas e deploy
 
-## Licença e conteúdo
+## Licença
 
-A WEB é domínio público. Consulte atribuições antes de distribuir novos capítulos.
+WEB em domínio público. Consulte atribuições antes de distribuir novos capítulos.
