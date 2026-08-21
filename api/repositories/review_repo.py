@@ -1,4 +1,4 @@
-"""Revisão com perguntas emitidas pelo servidor (question_id)."""
+"""Revisão: due em leitura pura; sessão POST emite question_id."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from app.domain.progress import Progress
-from app.domain.quiz import generate_quiz, get_translation
+from app.domain.quiz import generate_quiz
 from app.quiz import load_dictionary
 
 from api.database import DEFAULT_USER_ID
@@ -24,6 +24,10 @@ class ReviewInputError(ValueError):
     """Entrada inválida ou pergunta inexistente/expirada."""
 
 
+class ReviewConflictError(ValueError):
+    """Conflito de idempotência (mesma key, outra pergunta)."""
+
+
 class ReviewRepository:
     def __init__(self, progress_repo: ProgressRepository | None = None):
         self.progress_repo = progress_repo or ProgressRepository()
@@ -34,10 +38,50 @@ class ReviewRepository:
         *,
         user_id: str = DEFAULT_USER_ID,
         native_lang: str = "pt",
+        limit: int = 20,
+        today: date | None = None,
+    ) -> dict[str, Any]:
+        """GET puro: lista palavras vencidas sem gravar study_questions."""
+        review_date = today or date.today()
+        limit = max(1, min(int(limit), 50))
+
+        connection = self.progress_repo.transaction()
+        try:
+            vocabulary = self.vocabulary_repo.load(connection, user_id)
+            due_words = vocabulary.get_due_words(limit=limit, today=review_date)
+            words = []
+            for w in due_words:
+                entry = vocabulary.words.get(w, {})
+                words.append(
+                    {
+                        "word": w,
+                        "origin": str(entry.get("origin") or ""),
+                        "context": str(entry.get("context") or ""),
+                        "next_review": entry.get("next_review"),
+                    }
+                )
+            connection.rollback()  # leitura — não persiste nada
+            return {
+                "count": len(words),
+                "native_lang": native_lang,
+                "words": words,
+                "mode": "due",
+            }
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
+    def create_session(
+        self,
+        *,
+        user_id: str = DEFAULT_USER_ID,
+        native_lang: str = "pt",
         limit: int = 5,
         today: date | None = None,
     ) -> dict[str, Any]:
-        """Somente palavras vencidas. GET sem seed e sem campo correct."""
+        """POST: emite perguntas. Reutiliza question_id aberto da mesma palavra."""
         review_date = today or date.today()
         limit = max(1, min(int(limit), 20))
         dictionary = load_dictionary()
@@ -69,9 +113,34 @@ class ReviewRepository:
             payload: list[dict[str, Any]] = []
 
             for q in questions:
+                # Anti-farming: reutilizar pergunta aberta da mesma palavra
+                existing = connection.execute(
+                    """
+                    SELECT * FROM study_questions
+                    WHERE user_id = ? AND word = ? AND answered = 0
+                      AND expires_at > ?
+                    ORDER BY created_at DESC LIMIT 1
+                    """,
+                    (user_id, q.word, now.isoformat()),
+                ).fetchone()
+
+                if existing is not None:
+                    options = json.loads(existing["options_json"])
+                    entry = vocabulary.words.get(q.word, {})
+                    payload.append(
+                        {
+                            "question_id": existing["question_id"],
+                            "word": q.word,
+                            "options": options,
+                            "context": existing["context"] or "",
+                            "origin": existing["origin"] or "",
+                            "next_review": entry.get("next_review"),
+                        }
+                    )
+                    continue
+
                 question_id = f"q_{uuid.uuid4().hex}"
                 entry = vocabulary.words.get(q.word, {})
-                next_review = entry.get("next_review")
                 options = list(q.options)
 
                 connection.execute(
@@ -102,7 +171,7 @@ class ReviewRepository:
                         "options": options,
                         "context": q.context or "",
                         "origin": origins.get(q.word, ""),
-                        "next_review": next_review,
+                        "next_review": entry.get("next_review"),
                     }
                 )
 
@@ -111,7 +180,7 @@ class ReviewRepository:
                 "count": len(payload),
                 "native_lang": native_lang,
                 "questions": payload,
-                "mode": "due",
+                "mode": "session",
             }
         except Exception:
             connection.rollback()
@@ -143,6 +212,11 @@ class ReviewRepository:
                 (user_id, idempotency_key),
             ).fetchone()
             if existing is not None:
+                prev_qid = existing["question_id"] or ""
+                if prev_qid and prev_qid != qid:
+                    raise ReviewConflictError(
+                        "idempotency_key already used for a different question_id"
+                    )
                 progress = ProgressRepository.from_connection(connection, user_id)
                 connection.rollback()
                 return self._response_from_row(
@@ -244,7 +318,7 @@ class ReviewRepository:
                 "review_streak": entry["review_streak"],
                 "progress": self._progress_response(progress),
             }
-        except ReviewInputError:
+        except (ReviewInputError, ReviewConflictError):
             connection.rollback()
             raise
         except Exception:
