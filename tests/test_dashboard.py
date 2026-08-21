@@ -84,16 +84,20 @@ class DashboardTests(unittest.TestCase):
             headers=headers,
         )
         self.assertEqual(answer.status_code, 200, answer.text)
+        answer_body = answer.json()
 
         dash = self.client.get("/v1/dashboard", headers=headers)
         self.assertEqual(dash.status_code, 200, dash.text)
         body = dash.json()
 
-        self.assertGreater(body["progress"]["xp"], 0)
+        self.assertEqual(body["progress"]["xp"], answer_body["progress"]["xp"])
         self.assertGreater(body["vocabulary"]["total_words"], 0)
         self.assertGreaterEqual(body["reviews_today"], 1)
         self.assertTrue(body["recent_activity"])
         self.assertEqual(body["recent_activity"][0]["word"], question["word"])
+        self.assertEqual(
+            body["recent_activity"][0]["is_correct"], answer_body["is_correct"]
+        )
 
     def test_dashboard_isolation(self) -> None:
         alice = self._register("alice-dash@example.com")
