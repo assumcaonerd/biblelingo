@@ -1,0 +1,37 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      BIBLELINGO_ENV: ${BIBLELINGO_ENV:-production}
+      BIBLELINGO_DB_PATH: /app/data/biblelingo.db
+      # Origem do frontend servido pelo compose (porta 3000)
+      BIBLELINGO_CORS_ORIGINS: ${BIBLELINGO_CORS_ORIGINS:-http://127.0.0.1:3000,http://localhost:3000}
+    volumes:
+      - biblelingo_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  biblelingo_data:
