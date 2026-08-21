@@ -26,8 +26,25 @@ class Progress:
         """
         if level <= 1:
             return 0
-        # Nível 2 = 100, 3 = 250, 4 = 500, 5 = 850...
+        # Curva progressiva: cada nível exige mais XP que o anterior.
         return int(50 * (level ** 1.8))
+
+    def xp_for_next_level(self) -> int:
+        """Retorna o XP total necessário para alcançar o próximo nível."""
+        return self.xp_for_level(self.level + 1)
+
+    def level_progress(self) -> dict:
+        """Retorna XP atual, meta e percentual do nível atual."""
+        current_goal = self.xp_for_level(self.level)
+        next_goal = self.xp_for_next_level()
+        span = max(next_goal - current_goal, 1)
+        progress = max(0, min(self.xp - current_goal, span))
+        return {
+            "current": self.xp,
+            "level_start": current_goal,
+            "next_level": next_goal,
+            "percent": int(progress / span * 100),
+        }
 
     def add_xp(self, amount: int, reason: str = "") -> bool:
         """
@@ -111,13 +128,20 @@ class Progress:
         }
 
     def from_dict(self, data: dict):
-        self.xp = data.get("xp", 0)
-        self.level = data.get("level", 1)
-        self.current_streak = data.get("current_streak", 0)
-        self.longest_streak = data.get("longest_streak", 0)
+        self.xp = max(0, int(data.get("xp", 0)))
+        self.level = max(1, int(data.get("level", 1)))
+        self.current_streak = max(0, int(data.get("current_streak", 0)))
+        self.longest_streak = max(self.current_streak, int(data.get("longest_streak", 0)))
 
         last = data.get("last_activity_date")
-        self.last_activity_date = date.fromisoformat(last) if last else None
+        try:
+            self.last_activity_date = date.fromisoformat(last) if last else None
+        except (TypeError, ValueError):
+            self.last_activity_date = None
+
+        # Corrige arquivos editados manualmente em que XP e nível divergiram.
+        while self.xp >= self.xp_for_level(self.level + 1):
+            self.level += 1
 
         self.vocabulary = data.get("vocabulary", {})
 
@@ -131,7 +155,11 @@ class Progress:
             print("Nenhum progresso anterior encontrado. Começando do zero.")
             return
 
-        data = json.loads(file.read_text())
+        try:
+            data = json.loads(file.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            print(f"Não foi possível carregar o progresso: {exc}. Começando do zero.")
+            return
         self.from_dict(data)
         print(f"Progresso carregado: Nível {self.level} | {self.xp} XP | Streak {self.current_streak}")
 
