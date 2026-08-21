@@ -23,8 +23,11 @@ def clean_word(word: str) -> str:
     Retorna string vazia se a palavra não for útil.
     """
     # Remove tudo que não for letra ou apóstrofo (para palavras como God's)
-    cleaned = re.sub(r"[^a-zA-Z']", "", word)
+    normalized = str(word).replace("’", "'")
+    cleaned = re.sub(r"[^a-zA-Z']", "", normalized)
     cleaned = cleaned.lower().strip("'")
+    if cleaned.endswith("'s"):
+        cleaned = cleaned[:-2]
 
     if len(cleaned) < 2:
         return ""
@@ -33,7 +36,7 @@ def clean_word(word: str) -> str:
 
 def extract_words(verse_text: str, remove_stop_words: bool = True) -> List[str]:
     """
-    Quebra o texto do versículo em uma lista de palavras limpas.
+    Quebra o texto em uma lista de palavras limpas.
     Mantém a ordem de aparição e remove duplicatas.
     """
     tokens = verse_text.split()
