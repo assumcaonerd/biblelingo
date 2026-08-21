@@ -2,45 +2,49 @@
 
 App estilo Duolingo para aprender inglês lendo e praticando com a Bíblia (World English Bible).
 
-Gamificação simples + leitura interativa + vocabulário + quizzes.
+Gamificação + leitura interativa + vocabulário + quiz + **áudio**.
 
-## Objetivo do projeto
+## Objetivo
 
-Aprender inglês de forma natural através da leitura da Escritura. O texto usado é a **World English Bible (WEB)**, que está em domínio público.
+Aprender inglês de forma natural através da leitura da Escritura. Texto da **World English Bible (WEB)** (domínio público).
 
-## Status atual
+## O que já funciona
 
-### Já implementado
-- Sistema de **XP** e **níveis**
-- Sistema de **Streak** (dias consecutivos)
-- Bônus de XP baseado no streak
-- Carregador da Bíblia WEB (Gênesis sample)
-- Parser de palavras (com stop words)
+- XP e níveis
+- Streak (dias consecutivos)
+- Carregamento de Gênesis
+- Extração de palavras
 - Vocabulário do usuário
-- **Quiz interativo** (múltipla escolha)
-- Dicionário inicial inglês → português
+- Quiz interativo (múltipla escolha)
+- **Áudio com edge-tts** (pronúncia de palavras e leitura do texto)
 - Persistência em JSON
-
-### Próximos passos
-- Mais capítulos e livros
-- Interface web
-- Mais tipos de pergunta no quiz
-- Sistema de vidas / hearts
 
 ## Como rodar
 
 ```bash
 git clone https://github.com/assumcaonerd/biblelingo.git
 cd biblelingo
+pip install -r requirements.txt
 python main.py
 ```
 
-O fluxo completo agora é:
+O fluxo atual:
 1. Mostra Gênesis 1
-2. Extrai e salva palavras novas
-3. Roda um quiz com 5 perguntas
-4. Dá XP (leitura + palavras + acertos)
-5. Atualiza o streak
+2. Oferece ouvir o texto em inglês
+3. Extrai e salva palavras novas
+4. Roda quiz (com opção de ouvir a pronúncia de cada palavra)
+5. Dá XP e atualiza o streak
+
+## Dependência de áudio
+
+Usamos **edge-tts** (Microsoft Edge TTS):
+- Gratuito
+- Não precisa de API key
+- Qualidade boa para aprendizado de inglês
+
+```bash
+pip install edge-tts
+```
 
 ## Estrutura
 
@@ -51,7 +55,8 @@ biblelingo/
 │   ├── bible_loader.py
 │   ├── parser.py
 │   ├── vocabulary.py
-│   └── quiz.py
+│   ├── quiz.py
+│   └── audio.py          ← novo
 ├── data/
 │   ├── genesis_sample.json
 │   └── dictionary.json
