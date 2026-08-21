@@ -17,7 +17,7 @@ type AuthState = {
 
 const TestAuthContext = createContext<AuthState | null>(null);
 
-/** Provider de auth para testes — não chama GET /v1/me. */
+/** Provider de auth para testes; não chama GET /v1/me. */
 export function TestAuthProvider({
   children,
   token = "test-jwt-token",
@@ -45,6 +45,8 @@ export function TestAuthProvider({
   );
 }
 
+// Utilitário de teste, não participa de Fast Refresh em produção.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTestAuth() {
   const ctx = useContext(TestAuthContext);
   if (!ctx) throw new Error("useTestAuth outside provider");
@@ -62,6 +64,8 @@ type Options = Omit<RenderOptions, "wrapper"> & {
  * Os testes devem mockar `../auth` useAuth para usar useTestAuth,
  * ou mockar o módulo api diretamente.
  */
+// Utilitário de teste, não participa de Fast Refresh em produção.
+// eslint-disable-next-line react-refresh/only-export-components
 export function renderWithProviders(ui: ReactElement, options: Options = {}) {
   const { route = "/", token, user, ...rest } = options;
 
