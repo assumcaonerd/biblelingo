@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ApiError, api, type User } from "./api";
+import { ApiError, api, type NativeLanguage, type User } from "./api";
 
 const TOKEN_KEY = "biblelingo_token";
 const USER_KEY = "biblelingo_user";
@@ -19,7 +19,11 @@ type AuthState = {
   ready: boolean;
   sessionError: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, native?: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    native?: NativeLanguage
+  ) => Promise<void>;
   logout: () => void;
 };
 
@@ -102,7 +106,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (email: string, password: string, native = "pt") => {
+    async (
+      email: string,
+      password: string,
+      native: NativeLanguage = "pt"
+    ) => {
       const res = await api.register(email, password, native);
       persist(res.access_token, res.user);
       setReady(true);
@@ -132,6 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// Hook compartilhado pelo app; export intencional ao lado do provider.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");

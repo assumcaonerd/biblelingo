@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date
 from typing import Any
 
 from api.database import DEFAULT_USER_ID, connect, database_path, initialize_database
@@ -31,7 +31,9 @@ class DashboardRepository:
 
         with connect(self.db_path) as connection:
             progress = ProgressRepository.from_connection(connection, user_id)
-            vocabulary = self.vocabulary_repo.load(connection, user_id)
+            vocabulary = self.vocabulary_repo.load(
+                connection, user_id, migrate_legacy=False
+            )
 
             total_words = vocabulary.total_words()
             due_words = len(vocabulary.get_due_words(limit=10_000, today=reference))

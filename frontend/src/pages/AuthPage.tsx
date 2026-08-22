@@ -1,13 +1,14 @@
 import { FormEvent, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth";
+import type { NativeLanguage } from "../types/api";
 
 export function AuthPage() {
   const { token, login, register } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [native, setNative] = useState("pt");
+  const [native, setNative] = useState<NativeLanguage>("pt");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -78,7 +79,10 @@ export function AuthPage() {
           {mode === "register" && (
             <label>
               Idioma nativo
-              <select value={native} onChange={(e) => setNative(e.target.value)}>
+              <select
+                value={native}
+                onChange={(e) => setNative(e.target.value as NativeLanguage)}
+              >
                 <option value="pt">Português</option>
                 <option value="es">Español</option>
                 <option value="en">English</option>
