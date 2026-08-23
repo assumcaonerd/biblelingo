@@ -146,9 +146,8 @@ jobs:
   security:
     name: Dependency audit
     runs-on: ubuntu-latest
-    # Fase 2.1: só coleta material de triagem. Não bloqueia merge.
-    # Gate real = remover continue-on-error E os || true dos comandos bloqueantes.
-    continue-on-error: true
+    # Fase 2.4: coleta relatórios completos e aplica gate explícito no fim.
+    # Política: npm full bloqueia high+, npm produção bloqueia moderate+, pip-audit bloqueia qualquer vulnerabilidade conhecida.
     steps:
       - uses: actions/checkout@v4
 
@@ -288,12 +287,21 @@ jobs:
               except json.JSONDecodeError:
                   lines.append("- JSON inválido")
           lines.append("")
-          lines.append("Gate ainda NÃO ativo. Classificar runtime vs dev antes de bloquear.")
+          lines.append("Gate ATIVO: npm full high+, npm production moderate+, pip-audit qualquer vulnerabilidade conhecida.")
 
           summary = "\n".join(lines)
           (reports / "triage-summary.md").write_text(summary, encoding="utf-8")
           print(summary)
           PY
+
+      - name: Enforce dependency audit gate
+        run: |
+          echo "Gate npm full: high/critical"
+          (cd frontend && npm audit --audit-level=high)
+          echo "Gate npm production: moderate+"
+          (cd frontend && npm audit --omit=dev --audit-level=moderate)
+          echo "Gate Python: qualquer vulnerabilidade conhecida"
+          pip-audit -r requirements.txt
 
       - name: Upload audit artifacts
         if: always()
