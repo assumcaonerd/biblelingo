@@ -1,5 +1,7 @@
 # BibleLingo
 
+[![CI](https://github.com/assumcaonerd/biblelingo/actions/workflows/ci.yml/badge.svg)](https://github.com/assumcaonerd/biblelingo/actions/workflows/ci.yml)
+
 Aprenda inglês lendo, ouvindo e praticando a **World English Bible (WEB)**. Combina leitura contextual, pronúncia, vocabulário, revisão espaçada e gamificação leve.
 
 Licença: **[MIT](LICENSE)** · Conteúdo bíblico: WEB (domínio público)
@@ -49,7 +51,7 @@ Parar: `docker compose down` (mantém o volume). Remover dados: `docker compose 
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate   # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
 cp .env.example .env        # opcional em development
 uvicorn api.main:app --reload
@@ -64,8 +66,8 @@ cp .env.example .env        # opcional
 npm run dev
 ```
 
-- App: http://127.0.0.1:5173  
-- API: http://127.0.0.1:8000  
+- App: http://127.0.0.1:5173
+- API: http://127.0.0.1:8000
 
 Variáveis: [`.env.example`](.env.example), [`api/.env.example`](api/.env.example), [`frontend/.env.example`](frontend/.env.example).
 
@@ -76,14 +78,14 @@ Variáveis: [`.env.example`](.env.example), [`api/.env.example`](api/.env.exampl
 | Conta | Registro, login e revalidação JWT em `/v1/me` |
 | Leitura | Gênesis 1 / Salmos 23, áudio por versículo ou capítulo |
 | Vocabulário | `POST /v1/vocabulary/seed` (idempotente) |
-| Prática | `GET /v1/reviews/due` + `POST /v1/reviews/answer` |
+| Prática | `GET /v1/reviews/due` → `POST /v1/study-sessions` → `POST /v1/reviews/answer` |
 | Progresso | XP, streak, dashboard (`GET /v1/dashboard`) |
 
 ## Conteúdo disponível
 
 | Lição | Conteúdo |
 | --- | --- |
-| Gênesis 1 | Sample WEB + dicionário base |
+| Gênesis 1 | Sample WEB + dicionário base (`complete: false` no manifest) |
 | Salmos 23 | `data/psalms_sample.json` + `data/dictionary_psalms23.json` |
 
 Traduções: português, espanhol, inglês, árabe e hebraico.
@@ -98,6 +100,7 @@ Traduções: português, espanhol, inglês, árabe e hebraico.
 | GET | `/v1/dashboard` | JWT |
 | POST | `/v1/vocabulary/seed` | JWT |
 | GET | `/v1/reviews/due` | JWT |
+| POST | `/v1/study-sessions` | JWT |
 | POST | `/v1/reviews/answer` | JWT |
 | GET | `/v1/chapters/{book}/{chapter}` | público |
 | GET | `/health` | público |
@@ -107,10 +110,15 @@ Traduções: português, espanhol, inglês, árabe e hebraico.
 ```bash
 python -m compileall app api tests main.py
 python -m unittest discover -s tests -v
-cd frontend && npm ci && npm run build
+cd frontend && npm ci && npm test && npm run build
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) roda isso em todo push/PR na `main`.
+GitHub Actions (`.github/workflows/ci.yml`) em todo push/PR na `main`:
+
+- Backend: Ruff, compileall, validação JSON, unittest
+- Frontend: ESLint, Vitest, build
+- E2E: Playwright
+- Dependency audit: `npm audit` + `pip-audit` (**ainda não bloqueante**)
 
 ## Produção
 
