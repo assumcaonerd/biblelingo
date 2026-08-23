@@ -1,94 +1,13 @@
-name: Generate Python lock (temporary)
+name: Temporary Python lock generator (disabled)
 
 on:
-  push:
-    branches: [chore/python-lock]
-    paths:
-      - ".github/workflows/generate-python-lock-temp.yml"
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  generate-lock:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: chore/python-lock
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Resolve current dependency set
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip check
-
-      - name: Write deployment lock
-        run: |
-          {
-            echo "# Generated from requirements.txt on GitHub Actions"
-            echo "# Target: CPython 3.12 on Linux (CI/Docker)"
-            echo "# Regenerate intentionally; do not hand-edit."
-            python -m pip freeze --local | LC_ALL=C sort
-          } > requirements.lock.txt
-
-      - name: Wire lock into CI and Docker
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          ci_path = Path('.github/workflows/ci.yml')
-          ci = ci_path.read_text(encoding='utf-8')
-
-          install_old = 'pip install -r requirements.txt'
-          install_new = 'pip install -r requirements.txt -c requirements.lock.txt'
-          install_count = ci.count(install_old)
-          if install_count != 3:
-              raise SystemExit(f'expected 3 CI install occurrences, found {install_count}')
-          ci = ci.replace(install_old, install_new)
-
-          audit_old = 'pip-audit -r requirements.txt'
-          audit_new = 'pip-audit --no-deps -r requirements.lock.txt'
-          audit_count = ci.count(audit_old)
-          if audit_count != 2:
-              raise SystemExit(f'expected 2 pip-audit occurrences, found {audit_count}')
-          ci = ci.replace(audit_old, audit_new)
-
-          cache_old = '          cache: pip\n'
-          cache_new = '          cache: pip\n          cache-dependency-path: requirements.lock.txt\n'
-          cache_count = ci.count(cache_old)
-          if cache_count != 3:
-              raise SystemExit(f'expected 3 Python cache occurrences, found {cache_count}')
-          ci = ci.replace(cache_old, cache_new)
-          ci_path.write_text(ci, encoding='utf-8')
-
-          docker_path = Path('api/Dockerfile')
-          docker = docker_path.read_text(encoding='utf-8')
-          docker_old = 'COPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt'
-          docker_new = (
-              'COPY requirements.txt requirements.lock.txt ./\n'
-              'RUN pip install --no-cache-dir -r requirements.txt -c requirements.lock.txt'
-          )
-          if docker_old not in docker:
-              raise SystemExit('expected Docker dependency block not found')
-          docker = docker.replace(docker_old, docker_new, 1)
-          docker_path.write_text(docker, encoding='utf-8')
-          PY
-
-      - name: Commit lock and wiring
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add requirements.lock.txt .github/workflows/ci.yml api/Dockerfile
-          if git diff --cached --quiet; then
-            echo "Lock and wiring unchanged"
-            exit 0
-          fi
-          git commit -m "chore(deps): fixa resolução Python no CI e Docker"
-          git push origin HEAD:chore/python-lock
+      - run: echo "Temporary generator disabled; remove this file before merge."
