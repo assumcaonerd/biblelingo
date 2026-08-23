@@ -5,8 +5,8 @@ test.beforeEach(async ({ request }) => {
   await assertApiHealthy(request);
 });
 
-test("registrar, ver dashboard e abrir leitor", async ({ page }) => {
-  const email = uniqueEmail("dash");
+test("registrar, ver trilha e abrir leitor", async ({ page }) => {
+  const email = uniqueEmail("path");
   const password = "secret123";
 
   await page.goto("/auth");
@@ -21,11 +21,12 @@ test("registrar, ver dashboard e abrir leitor", async ({ page }) => {
     .click();
 
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: /Olá/i })).toBeVisible({
+  await expect(page.getByRole("heading", { name: /Unidade \d+/i })).toBeVisible({
     timeout: 20_000,
   });
+  await expect(page.getByRole("navigation", { name: /Navegação principal/i })).toBeVisible();
 
-  await page.getByRole("link", { name: /Ler Gênesis 1/i }).click();
+  await page.getByRole("link", { name: /Palavras de vida/i }).click();
   await expect(page).toHaveURL(/\/read/);
   await expect(page.getByRole("heading", { name: /Gênesis 1/i })).toBeVisible();
   await expect(page.getByText(/In the beginning/i)).toBeVisible();
@@ -43,7 +44,7 @@ test("seed do capítulo e tela de prática", async ({ page }) => {
     .locator("form")
     .getByRole("button", { name: "Criar conta" })
     .click();
-  await expect(page.getByRole("heading", { name: /Olá/i })).toBeVisible({
+  await expect(page.getByRole("heading", { name: /Unidade \d+/i })).toBeVisible({
     timeout: 20_000,
   });
 
