@@ -146,8 +146,8 @@ jobs:
   security:
     name: Dependency audit
     runs-on: ubuntu-latest
-    # Não bloqueia merge na Fase 2 inicial: só reporta.
-    # Quando a triagem terminar, remover continue-on-error.
+    # Fase 2.1: só coleta material de triagem. Não bloqueia merge.
+    # Gate real = remover continue-on-error E os || true dos comandos bloqueantes.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -159,12 +159,22 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: npm audit (frontend)
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: npm audit — grafo completo (dev + prod)
         working-directory: frontend
         run: |
-          npm ci
-          npm audit --audit-level=high || true
-          npm audit --json > npm-audit.json || true
+          mkdir -p ../audit-reports
+          npm audit --json > ../audit-reports/npm-audit-full.json 2>/dev/null || true
+          npm audit 2>&1 | tee ../audit-reports/npm-audit-full.txt || true
+
+      - name: npm audit — somente produção (--omit=dev)
+        working-directory: frontend
+        run: |
+          npm audit --omit=dev --json > ../audit-reports/npm-audit-prod.json 2>/dev/null || true
+          npm audit --omit=dev 2>&1 | tee ../audit-reports/npm-audit-prod.txt || true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -172,17 +182,95 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: pip-audit (backend)
+      - name: pip-audit — backend (JSON + texto)
         run: |
+          mkdir -p audit-reports
           python -m pip install --upgrade pip
           pip install -r requirements.txt pip-audit
-          pip-audit -r requirements.txt || true
+          pip-audit -r requirements.txt --format json -o audit-reports/pip-audit.json || true
+          pip-audit -r requirements.txt 2>&1 | tee audit-reports/pip-audit.txt || true
+
+      - name: Resumo legível da triagem
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          reports = Path("audit-reports")
+          reports.mkdir(exist_ok=True)
+          lines = ["# BibleLingo dependency triage summary", ""]
+
+          def npm_summary(path: Path, label: str) -> None:
+              lines.append(f"## {label}")
+              if not path.exists() or path.stat().st_size == 0:
+                  lines.append("- (arquivo ausente ou vazio)")
+                  lines.append("")
+                  return
+              try:
+                  data = json.loads(path.read_text(encoding="utf-8"))
+              except json.JSONDecodeError:
+                  lines.append("- JSON inválido")
+                  lines.append("")
+                  return
+              meta = (data.get("metadata") or {}).get("vulnerabilities") or {}
+              lines.append(
+                  f"- counts: critical={meta.get('critical', 0)} "
+                  f"high={meta.get('high', 0)} "
+                  f"moderate={meta.get('moderate', 0)} "
+                  f"low={meta.get('low', 0)} "
+                  f"info={meta.get('info', 0)} "
+                  f"total={meta.get('total', 0)}"
+              )
+              vulns = data.get("vulnerabilities") or {}
+              for name, info in sorted(vulns.items()):
+                  sev = info.get("severity", "?")
+                  direct = info.get("isDirect")
+                  rng = info.get("range", "")
+                  fix = info.get("fixAvailable")
+                  lines.append(
+                      f"- {sev}: {name} direct={direct} range={rng} fixAvailable={fix}"
+                  )
+              lines.append("")
+
+          npm_summary(reports / "npm-audit-full.json", "npm full (dev + prod)")
+          npm_summary(reports / "npm-audit-prod.json", "npm production (--omit=dev)")
+
+          lines.append("## pip-audit (backend)")
+          pip_path = reports / "pip-audit.json"
+          if not pip_path.exists() or pip_path.stat().st_size == 0:
+              lines.append("- (arquivo ausente ou vazio — ver pip-audit.txt)")
+          else:
+              try:
+                  data = json.loads(pip_path.read_text(encoding="utf-8"))
+                  if isinstance(data, list):
+                      if not data:
+                          lines.append("- nenhuma vulnerabilidade reportada")
+                      for item in data:
+                          name = item.get("name") or item.get("package")
+                          version = item.get("version")
+                          vulns = item.get("vulns") or item.get("vulnerabilities") or []
+                          for v in vulns:
+                              lines.append(
+                                  f"- {name}@{version}: {v.get('id', '?')} "
+                                  f"fix={v.get('fix_versions') or v.get('fix')}"
+                              )
+                  else:
+                      lines.append(f"- formato inesperado: {type(data).__name__}")
+              except json.JSONDecodeError:
+                  lines.append("- JSON inválido")
+          lines.append("")
+          lines.append("Gate ainda NÃO ativo. Classificar runtime vs dev antes de bloquear.")
+
+          summary = "\n".join(lines)
+          (reports / "triage-summary.md").write_text(summary, encoding="utf-8")
+          print(summary)
+          PY
 
       - name: Upload audit artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dependency-audits
-          path: |
-            frontend/npm-audit.json
-          if-no-files-found: ignore
+          path: audit-reports/
+          if-no-files-found: warn
