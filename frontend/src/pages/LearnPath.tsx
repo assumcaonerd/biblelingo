@@ -15,6 +15,14 @@ type PathNode = {
   badge?: string;
 };
 
+const languageBadges: Record<string, { flag: string; label: string }> = {
+  pt: { flag: "🇧🇷", label: "PT" },
+  es: { flag: "🇪🇸", label: "ES" },
+  en: { flag: "🇺🇸", label: "EN" },
+  ar: { flag: "🌙", label: "AR" },
+  he: { flag: "✡", label: "HE" },
+};
+
 function PathItem({ node }: { node: PathNode }) {
   const content = (
     <>
@@ -104,6 +112,7 @@ export function LearnPath() {
   const unitProgress = progress.level_progress.percent;
   const dailyPercent = Math.min(100, Math.round((data.reviews_today / Math.max(1, data.daily_goal)) * 100));
   const firstName = user?.email.split("@")[0] ?? "aluno";
+  const language = languageBadges[user?.native_language ?? "pt"] ?? languageBadges.pt;
 
   return (
     <main className="learn-path-page">
@@ -117,7 +126,7 @@ export function LearnPath() {
         </div>
 
         <div className="learn-status-strip" aria-label="Seu progresso">
-          <div className="status-chip"><span>🇵🇹</span><strong>PT</strong></div>
+          <div className="status-chip"><span>{language.flag}</span><strong>{language.label}</strong></div>
           <div className="status-chip"><span>⭐</span><strong>{progress.xp}</strong><small>XP</small></div>
           <div className="status-chip"><span>🔥</span><strong>{progress.current_streak}</strong><small>dias</small></div>
           <div className="status-chip"><span>❤️</span><strong>{data.reviews_today}/{data.daily_goal}</strong><small>meta</small></div>
@@ -157,7 +166,7 @@ export function LearnPath() {
         <NavLink to="/" end><span>⌂</span><small>Início</small></NavLink>
         <NavLink to="/read"><span>📖</span><small>Aprender</small></NavLink>
         <NavLink to="/review"><span>✦</span><small>Praticar</small></NavLink>
-        <NavLink to="/profile"><span>🏆</span><small>Progresso</small></NavLink>
+        <span className="learn-nav-disabled" title="Recompensas em breve"><span>🎁</span><small>Recompensas</small></span>
         <NavLink to="/profile"><span>●</span><small>Perfil</small></NavLink>
       </nav>
     </main>
