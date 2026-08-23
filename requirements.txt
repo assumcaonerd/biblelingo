@@ -1,3 +1,7 @@
+# Human-readable dependency intent.
+# Exact CPython 3.12/Linux resolution is pinned in requirements.lock.txt.
+-c requirements.lock.txt
+
 edge-tts>=6.1.0
 arabic-reshaper>=3.0.0
 python-bidi>=0.4.2
