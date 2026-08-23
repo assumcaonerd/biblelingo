@@ -1,7 +1,8 @@
-import { Navigate, NavLink, Route, Routes } from "react-router-dom";
+import { Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth";
 import { AuthPage } from "./pages/AuthPage";
 import { Dashboard } from "./pages/Dashboard";
+import { LearnPath } from "./pages/LearnPath";
 import { Reader } from "./pages/Reader";
 import { Review } from "./pages/Review";
 
@@ -16,6 +17,8 @@ function Protected({ children }: { children: React.ReactNode }) {
 
 function Shell() {
   const { token, user, ready, sessionError, logout } = useAuth();
+  const location = useLocation();
+  const immersiveHome = Boolean(token && location.pathname === "/");
 
   if (!ready) {
     return (
@@ -26,29 +29,26 @@ function Shell() {
   }
 
   return (
-    <div className="app-shell">
-      <nav className="nav">
-        <div className="nav-brand">BibleLingo</div>
-        <div className="nav-links">
-          {token ? (
-            <>
-              <NavLink to="/" end>
-                Início
-              </NavLink>
-              <NavLink to="/read">Ler</NavLink>
-              <NavLink to="/review">Praticar</NavLink>
-              <span className="muted" style={{ fontSize: "0.85rem" }}>
-                {user?.email}
-              </span>
-              <button type="button" onClick={logout}>
-                Sair
-              </button>
-            </>
-          ) : (
-            <NavLink to="/auth">Entrar</NavLink>
-          )}
-        </div>
-      </nav>
+    <div className={`app-shell${immersiveHome ? " app-shell--learn" : ""}`}>
+      {!immersiveHome && (
+        <nav className="nav">
+          <div className="nav-brand">BibleLingo</div>
+          <div className="nav-links">
+            {token ? (
+              <>
+                <NavLink to="/" end>Início</NavLink>
+                <NavLink to="/read">Ler</NavLink>
+                <NavLink to="/review">Praticar</NavLink>
+                <NavLink to="/profile">Progresso</NavLink>
+                <span className="muted" style={{ fontSize: "0.85rem" }}>{user?.email}</span>
+                <button type="button" onClick={logout}>Sair</button>
+              </>
+            ) : (
+              <NavLink to="/auth">Entrar</NavLink>
+            )}
+          </div>
+        </nav>
+      )}
 
       {sessionError && (
         <p className={token ? "muted" : "error"} style={{ marginTop: 0 }}>
@@ -58,30 +58,10 @@ function Shell() {
 
       <Routes>
         <Route path="/auth" element={<AuthPage />} />
-        <Route
-          path="/"
-          element={
-            <Protected>
-              <Dashboard />
-            </Protected>
-          }
-        />
-        <Route
-          path="/read"
-          element={
-            <Protected>
-              <Reader />
-            </Protected>
-          }
-        />
-        <Route
-          path="/review"
-          element={
-            <Protected>
-              <Review />
-            </Protected>
-          }
-        />
+        <Route path="/" element={<Protected><LearnPath /></Protected>} />
+        <Route path="/profile" element={<Protected><Dashboard /></Protected>} />
+        <Route path="/read" element={<Protected><Reader /></Protected>} />
+        <Route path="/review" element={<Protected><Review /></Protected>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
