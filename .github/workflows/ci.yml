@@ -238,25 +238,53 @@ jobs:
 
           lines.append("## pip-audit (backend)")
           pip_path = reports / "pip-audit.json"
+
+          def emit_pip_items(items: list) -> int:
+              count = 0
+              for item in items:
+                  name = item.get("name") or item.get("package")
+                  version = item.get("version")
+                  vulns = item.get("vulns") or item.get("vulnerabilities") or []
+                  if not vulns:
+                      continue
+                  for v in vulns:
+                      count += 1
+                      lines.append(
+                          f"- {name}@{version}: {v.get('id', '?')} "
+                          f"fix={v.get('fix_versions') or v.get('fix')}"
+                      )
+              return count
+
           if not pip_path.exists() or pip_path.stat().st_size == 0:
               lines.append("- (arquivo ausente ou vazio — ver pip-audit.txt)")
           else:
               try:
                   data = json.loads(pip_path.read_text(encoding="utf-8"))
+                  found = 0
                   if isinstance(data, list):
-                      if not data:
-                          lines.append("- nenhuma vulnerabilidade reportada")
-                      for item in data:
-                          name = item.get("name") or item.get("package")
-                          version = item.get("version")
-                          vulns = item.get("vulns") or item.get("vulnerabilities") or []
-                          for v in vulns:
+                      found = emit_pip_items(data)
+                  elif isinstance(data, dict):
+                      deps = data.get("dependencies")
+                      if isinstance(deps, list):
+                          found = emit_pip_items(deps)
+                      else:
+                          # Alguns formatos listam vulns no topo
+                          vulns = data.get("vulnerabilities") or data.get("vulns")
+                          if isinstance(vulns, list) and vulns:
+                              found = emit_pip_items(
+                                  [{"name": v.get("package"), "version": v.get("version"), "vulns": [v]} for v in vulns]
+                              )
+                          else:
                               lines.append(
-                                  f"- {name}@{version}: {v.get('id', '?')} "
-                                  f"fix={v.get('fix_versions') or v.get('fix')}"
+                                  f"- nenhuma vulnerabilidade reportada (objeto keys={sorted(data.keys())})"
                               )
                   else:
                       lines.append(f"- formato inesperado: {type(data).__name__}")
+
+                  if isinstance(data, (list, dict)) and found == 0 and "nenhuma vulnerabilidade" not in "\n".join(lines[-3:]):
+                      # lista/dict parseado sem entradas vulneráveis
+                      if not any("nenhuma vulnerabilidade" in line for line in lines[-5:]):
+                          lines.append("- nenhuma vulnerabilidade reportada")
               except json.JSONDecodeError:
                   lines.append("- JSON inválido")
           lines.append("")
