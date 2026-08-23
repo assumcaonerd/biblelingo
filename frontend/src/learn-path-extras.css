@@ -1,0 +1,20 @@
+.learn-bottom-nav .learn-nav-disabled {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  color: #526b86;
+  border-radius: 12px;
+  cursor: default;
+  opacity: 0.72;
+}
+
+.learn-bottom-nav .learn-nav-disabled > span {
+  font-size: 1.35rem;
+}
+
+.learn-bottom-nav .learn-nav-disabled small {
+  font-size: 0.69rem;
+  font-weight: 700;
+}
