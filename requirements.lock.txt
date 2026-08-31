@@ -13,7 +13,7 @@ arabic-reshaper==3.0.1
 attrs==26.1.0
 bcrypt==4.0.1
 certifi==2026.7.22
-click==8.4.2
+click==8.5.0
 dnspython==2.8.0
 edge-tts==7.2.8
 email-validator==2.3.0
